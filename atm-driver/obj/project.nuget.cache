@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "dgSpecHash": "dvXCQ81Vv2g=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Luis Angel\\Desktop\\apps in c#\\atm-driver\\atm-driver\\atm-driver.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Luis Angel\\.nuget\\packages\\microsoft.net.sdk.compilers.toolset\\9.0.100\\microsoft.net.sdk.compilers.toolset.9.0.100.nupkg.sha512",
+    "C:\\Users\\Luis Angel\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.11\\microsoft.windowsdesktop.app.ref.8.0.11.nupkg.sha512",
+    "C:\\Users\\Luis Angel\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.11\\microsoft.netcore.app.ref.8.0.11.nupkg.sha512",
+    "C:\\Users\\Luis Angel\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.11\\microsoft.aspnetcore.app.ref.8.0.11.nupkg.sha512",
+    "C:\\Users\\Luis Angel\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\8.0.11\\microsoft.netcore.app.host.win-x64.8.0.11.nupkg.sha512"
+  ],
+  "logs": []
+}
