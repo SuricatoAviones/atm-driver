@@ -22,7 +22,7 @@ namespace atm_driver.Clases
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseSqlServer("Data Source=LUISGUTIERREZ-P\\SQLEXPRESS2;Initial Catalog=atm-driver;Integrated Security=True; TrustServerCertificaction=True");
+                optionsBuilder.UseSqlServer("Server=LUISGUTIERREZ-P\\SQLEXPRESS2;Database=atm-driver;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True\n");
             }
         }
 
@@ -30,7 +30,7 @@ namespace atm_driver.Clases
         public static AppDbContext Create()
         {
             var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-            optionsBuilder.UseSqlServer("Data Source=LUISGUTIERREZ-P\\SQLEXPRESS2;Initial Catalog=atm-driver;Integrated Security=True; TrustServerCertificaction=True");
+            optionsBuilder.UseSqlServer("Server=LUISGUTIERREZ-P\\SQLEXPRESS2;Database=atm-driver;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True\n");
             return new AppDbContext(optionsBuilder.Options);
         } 
     }

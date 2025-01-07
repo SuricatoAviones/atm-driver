@@ -6,8 +6,6 @@ namespace atm_driver.Clases
     class Sistemas_Comunicacion
     {
 
-        // Propiedad del modelo
-        public  Sistemas_Comunicacion_Model Model { get; set; }
         // Métodos
         public void Inicializar()
 
