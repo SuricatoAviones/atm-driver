@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using atm_driver.Clases;
 
@@ -10,9 +11,11 @@ using atm_driver.Clases;
 namespace atm_driver.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250112154926_Name-Changed")]
+    partial class NameChanged
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -57,48 +60,6 @@ namespace atm_driver.Migrations
                     b.HasKey("cajero_id");
 
                     b.ToTable("Cajeros");
-                });
-
-            modelBuilder.Entity("atm_driver.Models.Servicio_Model", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("codigo")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("descripcion")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("estado")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("nombre")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("tiempo_espera_dos")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("tiempo_espera_uno")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("tipo_comunicacion_idId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("tipo_mensajeId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("tipo_comunicacion_idId");
-
-                    b.HasIndex("tipo_mensajeId");
-
-                    b.ToTable("Servicios");
                 });
 
             modelBuilder.Entity("atm_driver.Models.Sistemas_Comunicacion_Model", b =>
@@ -148,42 +109,6 @@ namespace atm_driver.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Sistemas_Comunicacion");
-                });
-
-            modelBuilder.Entity("atm_driver.Models.Tipo_Mensaje_Model", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("descripcion")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("nombre_tipo")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Tipo_Mensaje");
-                });
-
-            modelBuilder.Entity("atm_driver.Models.Servicio_Model", b =>
-                {
-                    b.HasOne("atm_driver.Models.Sistemas_Comunicacion_Model", "tipo_comunicacion_id")
-                        .WithMany()
-                        .HasForeignKey("tipo_comunicacion_idId");
-
-                    b.HasOne("atm_driver.Models.Tipo_Mensaje_Model", "tipo_mensaje")
-                        .WithMany()
-                        .HasForeignKey("tipo_mensajeId");
-
-                    b.Navigation("tipo_comunicacion_id");
-
-                    b.Navigation("tipo_mensaje");
                 });
 #pragma warning restore 612, 618
         }

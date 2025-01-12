@@ -13,9 +13,9 @@ namespace atm_driver.Models
         public int Id { get; set; }
 
         [Required]
-        public string nombre_tipo { get; set; }
+        public string? nombre_tipo { get; set; }
 
         [Required]
-        public string descripcion {  get; set; }
+        public string? descripcion {  get; set; }
     }
 }

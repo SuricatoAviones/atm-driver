@@ -8,6 +8,8 @@ namespace atm_driver.Clases
         // DbSet para los modelos
         public DbSet<Sistemas_Comunicacion_Model> SistemasComunicacion { get; set; }
         public DbSet<Cajeros_Model> Cajeros { get; set; }
+        public DbSet<Tipo_Mensaje_Model> Tipo_Mensaje { get; set; }
+        public DbSet<Servicio_Model> Servicio { get; set; }
 
         public AppDbContext() { } // Constructor vacío
         public AppDbContext(DbContextOptions<AppDbContext> options)
@@ -15,14 +17,13 @@ namespace atm_driver.Clases
         {
         }
 
-        
-
-         // Este método es opcional si usas Dependency Injection
+        // Este método es opcional si usas Dependency Injection
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseSqlServer("Server=LAPTOP-BQF70VD3\\SQLEXPRESS;Database=atm-driver;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True\n");
+                string connectionString = "Server=LUISGUTIERREZ-P\\SQLEXPRESS2;Database=atm-driver;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True";
+                optionsBuilder.UseSqlServer(connectionString);
             }
         }
 
@@ -30,8 +31,18 @@ namespace atm_driver.Clases
         public static AppDbContext Create()
         {
             var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-            optionsBuilder.UseSqlServer("Server=LAPTOP-BQF70VD3\\SQLEXPRESS;Database=atm-driver;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True\n");
+            /*string connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING");*/
+            string connectionString = "Server=LUISGUTIERREZ-P\\SQLEXPRESS2;Database=atm-driver;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True";
+            /*Console.Write(connectionString);*/
+            if (!string.IsNullOrEmpty(connectionString))
+            {
+                optionsBuilder.UseSqlServer(connectionString);
+            }
+            else
+            {
+                throw new InvalidOperationException($"La variable de entorno CONNECTION_STRING no está configurada. Valor actual: {connectionString}");
+            }
             return new AppDbContext(optionsBuilder.Options);
-        } 
+        }
     }
 }
