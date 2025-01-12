@@ -22,18 +22,19 @@ namespace AtmDriver
                     }
                 } 
 
-                // Clase Sistemas_Comunicacion
-                Sistemas_Comunicacion sistemasComunicacion = new Sistemas_Comunicacion();
-                sistemasComunicacion.Inicializar();
-                sistemasComunicacion.Conectar();
+                //Clase servicio
+                Servicio servicio1 = new Servicio();
+                Servicio servicio2 = new Servicio();
+                servicio1.Inicializar();
+                servicio2.Inicializar();
+
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Se produjo un error: {ex.Message}");
             }
 
-            Console.WriteLine("Presione cualquier tecla para salir...");
-            Console.ReadKey();
+            
         }
     }
 }
