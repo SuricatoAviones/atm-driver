@@ -6,6 +6,7 @@ namespace atm_driver.Clases
 {
     class Sistemas_Comunicacion
     {
+        private readonly int id;
         // Dirección y puerto del servidor
         private readonly string serverIp;
         private readonly int port;

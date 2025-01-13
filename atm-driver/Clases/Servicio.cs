@@ -9,13 +9,31 @@ namespace atm_driver.Clases
     internal class Servicio
     {
 
+     
         private readonly string _serverIp;
         private readonly int _port;
+
+        // Constructor para inicializar desde base de datos
+        /*public Servicio(int id, string codigo, string nombre, string descripcion, string estado, int tiempoEsperaUno, int tiempoEsperaDos, int? tipoMensajeId, int tipoComunicacionId)
+        {
+            this.id = id;
+            this.codigo = codigo;
+            this.nombre = nombre;
+            this.descripcion = descripcion;
+            this.estado = estado;
+            this.tiempoEsperaUno = tiempoEsperaUno;
+            this.tiempoEsperaDos = tiempoEsperaDos;
+            this.tipoMensajeId = tipoMensajeId;
+            this.tipoComunicacionId = tipoComunicacionId;
+        }*/
 
         public Servicio(string serverIp, int port)
         {
             _serverIp = serverIp;
             _port = port;
+
+            // Variables de constructor 
+
         }
 
         public void Inicializar()
