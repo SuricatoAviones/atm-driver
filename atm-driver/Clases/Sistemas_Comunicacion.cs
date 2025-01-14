@@ -1,90 +1,170 @@
 ﻿using atm_driver.Models;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 
 namespace atm_driver.Clases
 {
     class Sistemas_Comunicacion
     {
-        private readonly int id;
         // Dirección y puerto del servidor
         private readonly string serverIp;
         private readonly int port;
+        private readonly int receiveTimeout;
+        private readonly int sendTimeout;
+        private TcpListener? listener;
+        private bool isRunning;
 
         // Constructor
-        public Sistemas_Comunicacion(string serverIp, int port)
+        public Sistemas_Comunicacion(string serverIp, int port, int receiveTimeout, int sendTimeout)
         {
             this.serverIp = serverIp;
             this.port = port;
-            Console.WriteLine($"Sistema de comunicación configurado con IP: {serverIp} y Puerto: {port}");
+            this.receiveTimeout = receiveTimeout;
+            this.sendTimeout = sendTimeout;
+            Console.WriteLine($"Sistema de comunicación configurado con IP: {serverIp}, Puerto: {port}, ReceiveTimeout: {receiveTimeout}, SendTimeout: {sendTimeout}");
         }
 
         // Métodos
+
         public void Inicializar()
         {
             Console.WriteLine("Sistema de comunicación inicializado.");
+
+            listener = new TcpListener(IPAddress.Any, port);
+            listener.Start();
+            isRunning = true;
+            Console.WriteLine($"Servidor iniciado en {serverIp}:{port}");
+
+            while (isRunning)
+            {
+                try
+                {
+                    if (listener.Pending())
+                    {
+                        TcpClient client = listener.AcceptTcpClient();
+                        Console.WriteLine("Cliente conectado.");
+                        Thread clientThread = new Thread(() => ManejarCliente(client));
+                        clientThread.Start();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error en el servidor: {ex.Message}");
+                }
+            }
+        }
+
+        private void ManejarCliente(TcpClient client)
+        {
+            using NetworkStream stream = client.GetStream();
+            using StreamWriter writer = new StreamWriter(stream, Encoding.UTF8) { AutoFlush = true };
+            using StreamReader reader = new StreamReader(stream, Encoding.UTF8);
+
+            try
+            {
+                while (true)
+                {
+                    string? message = reader.ReadLine();
+                    if (message == null) break;
+                    Console.WriteLine($"[Recibido] {message}");
+
+                    // Procesar el mensaje y enviar una respuesta
+                    string response = ProcesarMensaje(message);
+                    writer.WriteLine(response);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al manejar cliente: {ex.Message}");
+            }
+            finally
+            {
+                client.Close();
+                Console.WriteLine("Cliente desconectado.");
+            }
+        }
+
+        private string ProcesarMensaje(string message)
+        {
+            // Aquí puedes agregar lógica para procesar diferentes tipos de mensajes
+            // y generar respuestas adecuadas. Por ejemplo:
+            if (message.Contains("opcion1"))
+            {
+                return "Respuesta a la opción 1";
+            }
+            else if (message.Contains("opcion2"))
+            {
+                return "Respuesta a la opción 2";
+            }
+            else
+            {
+                return "Mensaje no reconocido";
+            }
         }
 
         public void Conectar()
         {
             Console.WriteLine("Conectando al sistema de comunicación...");
+            // Implementar lógica de conexión si es necesario
         }
 
         public string ObtenerEstadoConexion()
         {
-            return "Conexión establecida.";
+            return isRunning ? "Conexión establecida." : "Conexión cerrada.";
         }
 
         public void CerrarConexion()
         {
             Console.WriteLine("Conexión cerrada.");
+            isRunning = false;
+            listener?.Stop();
             Console.WriteLine("Presione cualquier tecla para salir...");
             Console.ReadKey();
         }
 
-        public string EnviarMensaje()
-        {
-            return "Mensaje enviado correctamente.";
-        }
-
-        public void EnviarMensajeEsperarRespuesta()
+        public string EnviarMensaje(string mensaje)
         {
             try
             {
-                // Crear TcpClient
-                using TcpClient client = new TcpClient
+                using TcpClient client = new TcpClient(serverIp, port)
                 {
-                    ReceiveTimeout = 10000, // Tiempo de espera para lectura: 10 segundos
-                    SendTimeout = 10000    // Tiempo de espera para escritura: 10 segundos
+                    ReceiveTimeout = receiveTimeout,
+                    SendTimeout = sendTimeout
                 };
 
-                Console.WriteLine("Intentando conectar al servidor...");
+                using NetworkStream stream = client.GetStream();
+                using StreamWriter writer = new StreamWriter(stream, Encoding.UTF8) { AutoFlush = true };
+                using StreamReader reader = new StreamReader(stream, Encoding.UTF8);
 
-                // Intentar conectar con un tiempo de espera de 10 segundos
-                IAsyncResult result = client.BeginConnect(serverIp, port, null, null);
-                if (!result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(10)))
+                writer.WriteLine(mensaje);
+                string respuesta = reader.ReadLine() ?? "Sin respuesta";
+                return $"Mensaje enviado correctamente. Respuesta: {respuesta}";
+            }
+            catch (Exception ex)
+            {
+                return $"Error al enviar mensaje: {ex.Message}";
+            }
+        }
+
+        public void EnviarMensajeEsperarRespuesta(string mensaje)
+        {
+            try
+            {
+                using TcpClient client = new TcpClient(serverIp, port)
                 {
-                    throw new TimeoutException("La conexión al servidor agotó el tiempo de espera.");
-                }
-
-                client.EndConnect(result); // Finalizar la conexión
-                Console.WriteLine("Conectado al servidor.");
+                    ReceiveTimeout = receiveTimeout,
+                    SendTimeout = sendTimeout
+                };
 
                 using NetworkStream stream = client.GetStream();
+                using StreamWriter writer = new StreamWriter(stream, Encoding.UTF8) { AutoFlush = true };
+                using StreamReader reader = new StreamReader(stream, Encoding.UTF8);
 
-                // Enviar mensaje
-                string message = "Hola desde el cliente.";
-                byte[] messageData = Encoding.UTF8.GetBytes(message);
-                stream.Write(messageData, 0, messageData.Length);
-                Console.WriteLine("Mensaje enviado: " + message);
-
-                // Leer respuesta del servidor
-                byte[] buffer = new byte[1024];
-                int bytesRead = stream.Read(buffer, 0, buffer.Length);
-                string serverResponse = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                Console.WriteLine("Respuesta del servidor: " + serverResponse);
-
-                Console.WriteLine("Conexión cerrada.");
+                writer.WriteLine(mensaje);
+                string respuesta = reader.ReadLine();
+                Console.WriteLine($"Respuesta del servidor: {respuesta}");
             }
             catch (TimeoutException ex)
             {

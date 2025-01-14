@@ -24,17 +24,38 @@ namespace AtmDriver
 
                 }
 
-                //Clase servicio
-                string serverIp = "192.168.1.1"; // Ejemplo de dirección IP
-                int port = 12345; // Ejemplo de puerto TCP
 
-                Servicio servicio = new Servicio(serverIp, port);
-                servicio.Inicializar();
+                // Mostrar menú
+                while (true)
+                {
+                    Console.WriteLine("Seleccione una opción:");
+                    Console.WriteLine("1. Red de Cajeros");
+                    Console.WriteLine("2. Salir");
+                    Console.Write("Opción: ");
+                    string opcion = Console.ReadLine();
 
-                // Host Autorizador
-                // Si necesitas inicializar HostAutorizador
-                /* HostAutorizador hostAutorizador = new HostAutorizador(serverIp, port);
-                hostAutorizador.Inicializar();*/
+                    switch (opcion)
+                    {
+                        case "1":
+                            try
+                            {
+                                var servicio = Servicio.ObtenerServicioDesdeBaseDeDatos(1); // Reemplaza 1 con el ID del servicio que deseas obtener
+                                servicio.Inicializar();
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Error: {ex.Message}");
+                            }
+                            break;
+                        case "2":
+                            return;
+                        default:
+                            Console.WriteLine("Opción no válida. Intente de nuevo.");
+                            break;
+                    }
+                }
+
+
 
             }
             catch (Exception ex)

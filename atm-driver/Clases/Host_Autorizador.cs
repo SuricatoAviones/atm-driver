@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace atm_driver.Clases
 {
-    internal class Encriptador : Servicio
+    internal class Host_Autorizador : Servicio
     {
-        public Encriptador(Servicio_Model servicioModel) : base(servicioModel)
+        public Host_Autorizador(Servicio_Model servicioModel) : base(servicioModel)
         {
         }
     }
