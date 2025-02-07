@@ -16,7 +16,7 @@ namespace atm_driver.Models
         public DateTime hora_entrada { get; set; }
 
         
-        /*public Servicio? servicio_id { get; set; }*/
+        public Servicio_Model? servicio_id { get; set; }
         
     }
 }

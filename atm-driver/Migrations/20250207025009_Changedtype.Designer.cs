@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using atm_driver.Clases;
 
@@ -11,9 +12,11 @@ using atm_driver.Clases;
 namespace atm_driver.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250207025009_Changedtype")]
+    partial class Changedtype
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -341,13 +344,13 @@ namespace atm_driver.Migrations
                     b.Property<string>("nombre")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("sistema_comunicacion_id1")
-                        .HasColumnType("int");
-
                     b.Property<int?>("tiempo_espera_dos")
                         .HasColumnType("int");
 
                     b.Property<int?>("tiempo_espera_uno")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("tipo_comunicacion_idsistema_comunicacion_id")
                         .HasColumnType("int");
 
                     b.Property<int?>("tipo_mensaje_id1")
@@ -355,7 +358,7 @@ namespace atm_driver.Migrations
 
                     b.HasKey("servicio_id");
 
-                    b.HasIndex("sistema_comunicacion_id1");
+                    b.HasIndex("tipo_comunicacion_idsistema_comunicacion_id");
 
                     b.HasIndex("tipo_mensaje_id1");
 
@@ -415,8 +418,7 @@ namespace atm_driver.Migrations
                 {
                     b.Property<int>("tipo_mensaje_id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("tipo_mensaje_id");
+                        .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("tipo_mensaje_id"));
 
@@ -590,15 +592,15 @@ namespace atm_driver.Migrations
 
             modelBuilder.Entity("atm_driver.Models.Servicio_Model", b =>
                 {
-                    b.HasOne("atm_driver.Models.Sistemas_Comunicacion_Model", "sistema_comunicacion_id")
+                    b.HasOne("atm_driver.Models.Sistemas_Comunicacion_Model", "tipo_comunicacion_id")
                         .WithMany()
-                        .HasForeignKey("sistema_comunicacion_id1");
+                        .HasForeignKey("tipo_comunicacion_idsistema_comunicacion_id");
 
                     b.HasOne("atm_driver.Models.Tipo_Mensaje_Model", "tipo_mensaje_id")
                         .WithMany()
                         .HasForeignKey("tipo_mensaje_id1");
 
-                    b.Navigation("sistema_comunicacion_id");
+                    b.Navigation("tipo_comunicacion_id");
 
                     b.Navigation("tipo_mensaje_id");
                 });

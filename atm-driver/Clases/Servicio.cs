@@ -10,8 +10,6 @@ namespace atm_driver.Clases
 {
     internal class Servicio
     {
-
-
         private readonly string _serverIp;
         private readonly int _port;
         private readonly string? _codigo;
@@ -26,22 +24,22 @@ namespace atm_driver.Clases
         // Constructor para inicializar desde base de datos
         public Servicio(Servicio_Model servicioModel)
         {
-            _serverIp = servicioModel.tipo_comunicacion_id?.DireccionIp ?? throw new ArgumentNullException(nameof(servicioModel.tipo_comunicacion_id.DireccionIp));
-            _port = servicioModel.tipo_comunicacion_id?.PuertoTcp ?? throw new ArgumentNullException(nameof(servicioModel.tipo_comunicacion_id.PuertoTcp));
+            _serverIp = servicioModel.sistema_comunicacion_id?.direccion_ip ?? throw new ArgumentNullException(nameof(servicioModel.sistema_comunicacion_id.direccion_ip));
+            _port = int.TryParse(servicioModel.sistema_comunicacion_id?.puerto_tcp, out var port) ? port : throw new ArgumentNullException(nameof(servicioModel.sistema_comunicacion_id.puerto_tcp));
             _codigo = servicioModel.codigo;
             _nombre = servicioModel.nombre;
             _descripcion = servicioModel.descripcion;
             _estado = servicioModel.estado;
             _tiempoEsperaUno = servicioModel.tiempo_espera_uno ?? 10000; // Valor por defecto si es null
             _tiempoEsperaDos = servicioModel.tiempo_espera_dos ?? 10000; // Valor por defecto si es null
-            _tipoMensaje = servicioModel.tipo_mensaje;
-            _tipoComunicacion = servicioModel.tipo_comunicacion_id;
+            _tipoMensaje = servicioModel.tipo_mensaje_id;
+            _tipoComunicacion = servicioModel.sistema_comunicacion_id;
         }
 
-        
-       public void Inicializar()
+        public void Inicializar()
         {
             Console.WriteLine("Inicializando Servicio");
+            
             // Clase Sistemas_Comunicacion
             Sistemas_Comunicacion sistemasComunicacion = new Sistemas_Comunicacion(_serverIp, _port);
             sistemasComunicacion.Inicializar();
@@ -62,9 +60,9 @@ namespace atm_driver.Clases
             using (var context = new AppDbContext())
             {
                 var servicioModel = context.Servicios
-                    .Include(s => s.tipo_comunicacion_id)
-                    .Include(s => s.tipo_mensaje)
-                    .FirstOrDefault(s => s.Id == servicioId);
+                    .Include(s => s.sistema_comunicacion_id)
+                    .Include(s => s.tipo_mensaje_id)
+                    .FirstOrDefault(s => s.servicio_id == servicioId);
 
                 if (servicioModel == null)
                 {
@@ -74,6 +72,5 @@ namespace atm_driver.Clases
                 return new Servicio(servicioModel);
             }
         }
-
     }
 }

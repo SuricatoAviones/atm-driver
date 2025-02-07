@@ -10,7 +10,8 @@ namespace atm_driver.Models
     {
         [Key] // Llave primaria
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)] // Autoincrementable
-        public int Id { get; set; }
+        [Column("tipo_mensaje_id")]
+        public int tipo_mensaje_id { get; set; }
 
         [Required]
         public string? nombre_tipo { get; set; }

@@ -10,7 +10,7 @@ namespace atm_driver.Models
     {
         [Key] // Llave primaria
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)] // Autoincrementable
-        public int Id { get; set; }
+        public int servicio_id { get; set; }
 
         [Required]
         public string? codigo { get; set; }
@@ -25,8 +25,10 @@ namespace atm_driver.Models
 
         public int? tiempo_espera_dos {  get; set; }
 
-        public Tipo_Mensaje_Model? tipo_mensaje { get; set; }
+        [Column("tipo_mensaje_id")]
+        public Tipo_Mensaje_Model? tipo_mensaje_id { get; set; }
 
-        public Sistemas_Comunicacion_Model? tipo_comunicacion_id  { get; set; }  
+        [Column("tipo_comunicacion_id")]
+        public Sistemas_Comunicacion_Model? sistema_comunicacion_id  { get; set; }  
     }
 }

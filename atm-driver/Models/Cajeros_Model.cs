@@ -1,6 +1,6 @@
-﻿
-using System.ComponentModel.DataAnnotations;
+﻿using atm_driver.Clases;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
 
 
 namespace atm_driver.Models
@@ -21,7 +21,10 @@ namespace atm_driver.Models
         public string? clave_masterKey { get; set; }
         public string? localizacion { get; set; }
         public string? estado { get; set; }
- 
+
+        public Download_Model? download_id { get; set; }
+
+
     }
 
 }

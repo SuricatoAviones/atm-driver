@@ -30,7 +30,9 @@ namespace AtmDriver
                 {
                     Console.WriteLine("Seleccione una opción:");
                     Console.WriteLine("1. Red de Cajeros");
-                    Console.WriteLine("2. Salir");
+                    Console.WriteLine("2. Encriptador");
+                    Console.WriteLine("3. Host Autorizador");
+                    Console.WriteLine("4. Salir");
                     Console.Write("Opción: ");
                     string opcion = Console.ReadLine();
 
@@ -48,6 +50,32 @@ namespace AtmDriver
                             }
                             break;
                         case "2":
+
+                            try
+                            {
+                                var servicio = Servicio.ObtenerServicioDesdeBaseDeDatos(2); // Reemplaza 2 con el ID del servicio que deseas obtener
+                                servicio.Inicializar();
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Error: {ex.Message}");
+                            }
+                            break;
+
+                        case "3":
+                            try
+                            {
+                                var servicio = Servicio.ObtenerServicioDesdeBaseDeDatos(3); // Reemplaza 3 con el ID del servicio que deseas obtener
+                                servicio.Inicializar();
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Error: {ex.Message}");
+                            }
+                            break;
+
+
+                        case "4":
                             return;
                         default:
                             Console.WriteLine("Opción no válida. Intente de nuevo.");

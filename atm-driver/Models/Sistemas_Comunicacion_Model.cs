@@ -9,30 +9,30 @@ namespace atm_driver.Models
     {
         [Key] // Llave primaria
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)] // Autoincrementable
-        public int Id { get; set; }
+        public int sistema_comunicacion_id { get; set; }
 
         [Required] // Campo obligatorio
-        public int TipoConexion { get; set; }
+        public int tipo_conexion { get; set; }
 
         [Required]
-        public int TipoConexionTcp { get; set; }
+        public int tipo_conexion_tcp { get; set; }
 
         [MaxLength(50)] // Longitud máxima de la cadena
-        public string? DireccionIp { get; set; }
+        public string? direccion_ip { get; set; }
 
-        public int PuertoTcp { get; set; }
-        public int SocketTcp { get; set; }
+        public string? puerto_tcp { get; set; }
+        public string? socket_tcp { get; set; }
 
         [MaxLength(100)]
-        public string? ServidorSoapApi { get; set; }
+        public string? servidor_soap_api { get; set; }
 
-        public int PuertoSoapApi { get; set; }
+        public int? puerto_soap_api { get; set; }
 
         [MaxLength(20)]
-        public string? Encabezado { get; set; }
+        public string? encabezado { get; set; }
 
-        public int LongitudPaquete { get; set; }
-        public bool Ebcdc { get; set; }
-        public bool Empaquetado { get; set; }
+        public int longitud_paquete { get; set; }
+        public bool ebcdc { get; set; }
+        public bool empaquetado { get; set; }
     }
 }
