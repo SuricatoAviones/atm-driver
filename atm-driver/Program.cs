@@ -1,11 +1,12 @@
-﻿using System;
+﻿// atm-driver/Program.cs
+using System;
 using atm_driver.Clases;
 
 namespace AtmDriver
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             try
             {
@@ -20,10 +21,7 @@ namespace AtmDriver
                     {
                         Console.WriteLine("Error al conectar a la base de datos.");
                     }
-
-
                 }
-
 
                 // Mostrar menú
                 while (true)
@@ -42,7 +40,7 @@ namespace AtmDriver
                             try
                             {
                                 var servicio = Servicio.ObtenerServicioDesdeBaseDeDatos(1); // Reemplaza 1 con el ID del servicio que deseas obtener
-                                servicio.Inicializar();
+                                await servicio.Inicializar();
                             }
                             catch (Exception ex)
                             {
@@ -50,31 +48,27 @@ namespace AtmDriver
                             }
                             break;
                         case "2":
-
                             try
                             {
-                                var servicio = Servicio.ObtenerServicioDesdeBaseDeDatos(2); // Reemplaza 2 con el ID del servicio que deseas obtener
-                                servicio.Inicializar();
+                                /*var host_autorizador = new HostAutorizador();
+                                await host_autorizador.Inicializar();*/
                             }
                             catch (Exception ex)
                             {
                                 Console.WriteLine($"Error: {ex.Message}");
                             }
                             break;
-
                         case "3":
                             try
                             {
                                 var servicio = Servicio.ObtenerServicioDesdeBaseDeDatos(3); // Reemplaza 3 con el ID del servicio que deseas obtener
-                                servicio.Inicializar();
+                                await servicio.Inicializar();
                             }
                             catch (Exception ex)
                             {
                                 Console.WriteLine($"Error: {ex.Message}");
                             }
                             break;
-
-
                         case "4":
                             return;
                         default:
@@ -82,20 +76,11 @@ namespace AtmDriver
                             break;
                     }
                 }
-
-
-
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Se produjo un error: {ex.Message}");
             }
-
-            
         }
     }
-
-
 }
-
-

@@ -36,13 +36,13 @@ namespace atm_driver.Clases
             _tipoComunicacion = servicioModel.sistema_comunicacion_id;
         }
 
-        public void Inicializar()
+        public async Task Inicializar()
         {
             Console.WriteLine("Inicializando Servicio");
             
             // Clase Sistemas_Comunicacion
             Sistemas_Comunicacion sistemasComunicacion = new Sistemas_Comunicacion(_serverIp, _port);
-            sistemasComunicacion.Inicializar();
+            await sistemasComunicacion.Inicializar();
         }
 
         public void VerificarEstado()

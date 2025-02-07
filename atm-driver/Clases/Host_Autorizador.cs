@@ -19,7 +19,7 @@ namespace atm_driver.Clases
         }
 
         // Método para inicializar el host autorizador
-        public new void Inicializar()
+        public async  new Task Inicializar()
         {
             Console.WriteLine("Inicializando Host Autorizador");
             base.Inicializar(); // Llama al método Inicializar de la clase base (Servicio)
