@@ -31,7 +31,7 @@ namespace atm_driver.Clases
         {
             if (!optionsBuilder.IsConfigured)
             {
-                string connectionString = "Server=LUISGUTIERREZ-P\\SQLEXPRESS2;Database=atm-driver;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True";
+                string connectionString = "Server=LAPTOP-BQF70VD3\\SQLEXPRESS;Database=atm-driver;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True";
                 optionsBuilder.UseSqlServer(connectionString);
             }
         }
@@ -41,7 +41,7 @@ namespace atm_driver.Clases
         {
             var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
             /*string connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING");*/
-            string connectionString = "Server=LUISGUTIERREZ-P\\SQLEXPRESS2;Database=atm-driver;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True";
+            string connectionString = "Server=LAPTOP-BQF70VD3\\SQLEXPRESS;Database=atm-driver;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True";
             /*Console.Write(connectionString);*/
             if (!string.IsNullOrEmpty(connectionString))
             {
