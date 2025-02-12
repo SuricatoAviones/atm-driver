@@ -1,10 +1,11 @@
 ﻿using Azure;
 using System;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using atm_driver.Models;
+using AtmDriver;
 
 namespace atm_driver.Clases
 {
@@ -19,15 +20,7 @@ namespace atm_driver.Clases
         {
             _serverIp = serverIp;
             _port = port;
-            // Validar si la IP es 0.0.0.0 para escuchar en todas las direcciones
-            if (_serverIp == "0.0.0.0")
-            {
-                _server = new TcpListener(IPAddress.Any, port);
-            }
-            else
-            {
-                _server = new TcpListener(IPAddress.Parse(serverIp), port);
-            }
+            _server = new TcpListener(IPAddress.Any, port);
         }
 
         public async Task Inicializar()
@@ -42,9 +35,8 @@ namespace atm_driver.Clases
             try
             {
                 _server.Start();
-                string ip = _serverIp == "0.0.0.0" ? ObtenerIpLocal() : _serverIp;
+                string ip = ObtenerIpLocal();
                 Console.WriteLine($"El cliente debe conectarse a la IP: {ip} en el puerto: {_port}");
-
 
                 while (_isRunning)
                 {
@@ -70,6 +62,22 @@ namespace atm_driver.Clases
                     string clientIp = remoteEndPoint?.Address.ToString();
                     Console.WriteLine($"Cliente conectado desde la IP: {clientIp}");
 
+                    // Verificar si la IP está en la base de datos
+                    Cajeros_Model? cajero = Servicio.VerificarIpCajero(clientIp);
+                    if (cajero == null)
+                    {
+                        Console.WriteLine($"La IP {clientIp} no está registrada en la base de datos de cajeros. Cerrando conexión.");
+                        Eventos.GuardarEvento(2, $"Cajero con IP {clientIp} no registrado. Conexión cerrada.");
+                        client.Close();
+                        return;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"La IP {clientIp} está registrada en la base de datos de cajeros.");
+                        Program.AgregarCajero(cajero);
+                        Eventos.GuardarEvento(1, $"Cajero con IP {clientIp} conectado.");
+                    }
+
                     byte[] buffer = new byte[1024];
                     int bytesRead;
 
@@ -92,8 +100,6 @@ namespace atm_driver.Clases
                         bytesRead = await stream.ReadAsync(buffer, 0, originalNumber);
                         Console.WriteLine($"Cantidad de Bytes Recibidos: {bytesRead}");
                         Console.WriteLine($"Mensaje Recibido: {Encoding.UTF8.GetString(buffer, 0, bytesRead)}");
-
-                        
                     }
                 }
             }
@@ -110,22 +116,6 @@ namespace atm_driver.Clases
             Console.WriteLine("Servidor detenido.");
         }
 
-        public void EnviarMensaje()
-        {
-            // Enviar una respuesta al cliente
-            /*string response = $"Número original: {originalNumber}";
-            byte[] responseBytes = Encoding.UTF8.GetBytes(response);
-            await stream.WriteAsync(responseBytes, 0, responseBytes.Length);
-            Console.WriteLine("Respuesta enviada al cliente.");*/
-
-        }
-
-        public void EnviarMensaje_EsperarRespuesta()
-        {
-
-        }
-
-
         private string ObtenerIpLocal()
         {
             string localIP = "";
@@ -139,4 +129,3 @@ namespace atm_driver.Clases
         }
     }
 }
-

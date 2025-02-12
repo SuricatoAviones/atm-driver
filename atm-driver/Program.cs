@@ -1,11 +1,16 @@
 ﻿// atm-driver/Program.cs
 using System;
+using System.Collections.Generic;
 using atm_driver.Clases;
+using atm_driver.Models;
 
 namespace AtmDriver
 {
     class Program
     {
+        // Lista estática para almacenar objetos de cajeros
+        private static List<Cajeros_Model> cajerosList = new List<Cajeros_Model>();
+
         static async Task Main(string[] args)
         {
             try
@@ -81,6 +86,13 @@ namespace AtmDriver
             {
                 Console.WriteLine($"Se produjo un error: {ex.Message}");
             }
+        }
+
+        // Método estático para agregar un cajero a la lista
+        public static void AgregarCajero(Cajeros_Model cajero)
+        {
+            cajerosList.Add(cajero);
+            Console.WriteLine($"Cajero {cajero.nombre} agregado a la lista.");
         }
     }
 }

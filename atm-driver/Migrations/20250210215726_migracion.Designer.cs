@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using atm_driver.Clases;
 
@@ -11,9 +12,11 @@ using atm_driver.Clases;
 namespace atm_driver.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250210215726_migracion")]
+    partial class migracion
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -117,12 +120,7 @@ namespace atm_driver.Migrations
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("nombre");
 
-                    b.Property<int?>("tipo_evento_id1")
-                        .HasColumnType("int");
-
                     b.HasKey("codigo_evento_id");
-
-                    b.HasIndex("tipo_evento_id1");
 
                     b.ToTable("Codigos_Evento");
                 });
@@ -231,9 +229,8 @@ namespace atm_driver.Migrations
                     b.Property<int?>("cajero_id1")
                         .HasColumnType("int");
 
-                    b.Property<int?>("codigo_evento_id")
-                        .HasColumnType("int")
-                        .HasColumnName("codigo_evento_id");
+                    b.Property<int?>("codigo_evento_id1")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("fecha")
                         .HasColumnType("datetime2")
@@ -260,6 +257,8 @@ namespace atm_driver.Migrations
                     b.HasKey("evento_id");
 
                     b.HasIndex("cajero_id1");
+
+                    b.HasIndex("codigo_evento_id1");
 
                     b.HasIndex("servicio_id1");
 
@@ -451,29 +450,6 @@ namespace atm_driver.Migrations
                     b.ToTable("Sistemas_Comunicacion");
                 });
 
-            modelBuilder.Entity("atm_driver.Models.Tipo_Evento_Model", b =>
-                {
-                    b.Property<int>("tipo_evento_id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("tipo_evento_id"));
-
-                    b.Property<string>("descripcion")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
-                        .HasColumnName("descripcion");
-
-                    b.Property<string>("nombre")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
-                        .HasColumnName("nombre");
-
-                    b.HasKey("tipo_evento_id");
-
-                    b.ToTable("Tipo_Eventos");
-                });
-
             modelBuilder.Entity("atm_driver.Models.Tipo_Mensaje_Model", b =>
                 {
                     b.Property<int>("tipo_mensaje_id")
@@ -615,15 +591,6 @@ namespace atm_driver.Migrations
                     b.Navigation("key_id");
                 });
 
-            modelBuilder.Entity("atm_driver.Models.Codigos_Evento_Model", b =>
-                {
-                    b.HasOne("atm_driver.Models.Tipo_Evento_Model", "tipo_evento_id")
-                        .WithMany()
-                        .HasForeignKey("tipo_evento_id1");
-
-                    b.Navigation("tipo_evento_id");
-                });
-
             modelBuilder.Entity("atm_driver.Models.Dispositivos_Model", b =>
                 {
                     b.HasOne("atm_driver.Models.Cajeros_Model", "cajero_id")
@@ -654,11 +621,17 @@ namespace atm_driver.Migrations
                         .WithMany()
                         .HasForeignKey("cajero_id1");
 
+                    b.HasOne("atm_driver.Models.Codigos_Evento_Model", "codigo_evento_id")
+                        .WithMany()
+                        .HasForeignKey("codigo_evento_id1");
+
                     b.HasOne("atm_driver.Models.Servicio_Model", "servicio_id")
                         .WithMany()
                         .HasForeignKey("servicio_id1");
 
                     b.Navigation("cajero_id");
+
+                    b.Navigation("codigo_evento_id");
 
                     b.Navigation("servicio_id");
                 });

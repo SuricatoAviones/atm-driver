@@ -39,7 +39,7 @@ namespace atm_driver.Clases
         public async Task Inicializar()
         {
             Console.WriteLine("Inicializando Servicio");
-            
+
             // Clase Sistemas_Comunicacion
             Sistemas_Comunicacion sistemasComunicacion = new Sistemas_Comunicacion(_serverIp, _port);
             await sistemasComunicacion.Inicializar();
@@ -72,5 +72,15 @@ namespace atm_driver.Clases
                 return new Servicio(servicioModel);
             }
         }
+
+        // Modificar método para devolver el objeto Cajeros_Model si la IP está en la base de datos
+        public static Cajeros_Model? VerificarIpCajero(string ip)
+        {
+            using (var context = new AppDbContext())
+            {
+                return context.Cajeros.FirstOrDefault(c => c.direccion_ip == ip);
+            }
+        }
     }
 }
+

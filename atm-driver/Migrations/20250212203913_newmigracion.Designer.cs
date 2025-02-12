@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using atm_driver.Clases;
 
@@ -11,9 +12,11 @@ using atm_driver.Clases;
 namespace atm_driver.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250212203913_newmigracion")]
+    partial class newmigracion
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -231,9 +234,8 @@ namespace atm_driver.Migrations
                     b.Property<int?>("cajero_id1")
                         .HasColumnType("int");
 
-                    b.Property<int?>("codigo_evento_id")
-                        .HasColumnType("int")
-                        .HasColumnName("codigo_evento_id");
+                    b.Property<int?>("codigo_evento_id1")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("fecha")
                         .HasColumnType("datetime2")
@@ -260,6 +262,8 @@ namespace atm_driver.Migrations
                     b.HasKey("evento_id");
 
                     b.HasIndex("cajero_id1");
+
+                    b.HasIndex("codigo_evento_id1");
 
                     b.HasIndex("servicio_id1");
 
@@ -654,11 +658,17 @@ namespace atm_driver.Migrations
                         .WithMany()
                         .HasForeignKey("cajero_id1");
 
+                    b.HasOne("atm_driver.Models.Codigos_Evento_Model", "codigo_evento_id")
+                        .WithMany()
+                        .HasForeignKey("codigo_evento_id1");
+
                     b.HasOne("atm_driver.Models.Servicio_Model", "servicio_id")
                         .WithMany()
                         .HasForeignKey("servicio_id1");
 
                     b.Navigation("cajero_id");
+
+                    b.Navigation("codigo_evento_id");
 
                     b.Navigation("servicio_id");
                 });

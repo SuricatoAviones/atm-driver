@@ -17,13 +17,11 @@ namespace atm_driver.Models
         public string? codigo { get; set; }
         public string? marca { get; set; }
         public string? modelo { get; set; }
-        public string? clave_comunicacion { get; set; }
-        public string? clave_masterKey { get; set; }
         public string? localizacion { get; set; }
         public string? estado { get; set; }
-
+        public string? direccion_ip { get; set; }
         public Download_Model? download_id { get; set; }
-
+        public Keys_Model? key_id { get; set; }
 
     }
 
