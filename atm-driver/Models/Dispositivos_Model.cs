@@ -29,8 +29,12 @@ namespace atm_driver.Models
         [StringLength(500)] 
         public string? estado_suministro { get; set; }
 
-        public Denominaciones_Monedas_Model? codigo_moneda_id { get; set; }
+        [ForeignKey("Denominaciones_Monedas")]
+        [Column("denominacion_moneda_id")]
+        public int? denominacion_moneda_id { get; set; }
 
-        public Cajeros_Model? cajero_id { get; set; }
+        [ForeignKey("Cajeros")]
+        [Column("cajero_id")]
+        public int? cajero_id { get; set; }
     }
 }

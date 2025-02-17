@@ -36,10 +36,14 @@ namespace atm_driver.Models
         [ForeignKey("Codigos_Evento")]
         [Column("codigo_evento_id")]
         public int?  codigo_evento_id { get; set; }
-    
-        public Cajeros_Model? cajero_id { get; set; }
 
-        public Servicio_Model? servicio_id { get; set; }
+        [ForeignKey("Cajeros")]
+        [Column("cajero_id")]
+        public int? cajero_id { get; set; }
+
+        [ForeignKey("Servicios")]
+        [Column("servicio_id")]
+        public int? servicio_id { get; set; }
 
         
     }

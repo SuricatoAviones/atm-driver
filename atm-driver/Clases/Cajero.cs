@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Net.Sockets;
 
 namespace atm_driver.Clases
 {
-    internal class Cajero
+    public class Cajero
     {
         // Atributos
         public int Id { get; set; }
@@ -18,6 +14,9 @@ namespace atm_driver.Clases
         public string ClaveMasterKey { get; set; }
         public string Localizacion { get; set; }
         public string Estado { get; set; }
+
+        // Nueva propiedad para manejar la conexión del cliente
+        public TcpClient Cliente { get; set; }
 
         // Métodos
         public void Inicializar(string type)

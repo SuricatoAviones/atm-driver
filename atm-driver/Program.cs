@@ -35,7 +35,8 @@ namespace AtmDriver
                     Console.WriteLine("1. Red de Cajeros");
                     Console.WriteLine("2. Encriptador");
                     Console.WriteLine("3. Host Autorizador");
-                    Console.WriteLine("4. Salir");
+                    Console.WriteLine("4. Ver Cajeros Conectados");
+                    Console.WriteLine("5. Salir");
                     Console.Write("Opción: ");
                     string opcion = Console.ReadLine();
 
@@ -75,6 +76,9 @@ namespace AtmDriver
                             }
                             break;
                         case "4":
+                            MostrarCajeros();
+                            break;
+                        case "5":
                             return;
                         default:
                             Console.WriteLine("Opción no válida. Intente de nuevo.");
@@ -93,6 +97,38 @@ namespace AtmDriver
         {
             cajerosList.Add(cajero);
             Console.WriteLine($"Cajero {cajero.nombre} agregado a la lista.");
+        }
+
+        // Método estático para retirar un cajero de la lista
+        public static void RetirarCajero(int cajeroId)
+        {
+            var cajero = cajerosList.FirstOrDefault(c => c.cajero_id == cajeroId);
+            if (cajero != null)
+            {
+                cajerosList.Remove(cajero);
+                Console.WriteLine($"Cajero {cajero.nombre} retirado de la lista.");
+            }
+            else
+            {
+                Console.WriteLine($"Cajero con ID {cajeroId} no encontrado en la lista.");
+            }
+        }
+
+        // Método estático para mostrar los cajeros en la lista
+        public static void MostrarCajeros()
+        {
+            if (cajerosList.Count > 0)
+            {
+                Console.WriteLine("Lista de cajeros:");
+                foreach (var cajero in cajerosList)
+                {
+                    Console.WriteLine($"ID: {cajero.cajero_id}, Nombre: {cajero.nombre}, Estado: {cajero.estado}");
+                }
+            }
+            else
+            {
+                Console.WriteLine("No hay cajeros en la lista.");
+            }
         }
     }
 }

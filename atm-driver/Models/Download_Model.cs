@@ -28,7 +28,7 @@ namespace atm_driver.Models
         // Clave Foránea
         [ForeignKey("FormatoCajero")]
         [Column("formato_cajero_id")]
-        public Formato_Cajero_Model? formato_cajero_id { get; set; }
+        public int? formato_cajero_id { get; set; }
 
         /*// Propiedad de navegación
         public virtual FormatoCajero FormatoCajero { get; set; }*/

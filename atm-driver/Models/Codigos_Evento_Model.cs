@@ -23,6 +23,8 @@ namespace atm_driver.Models
         [Column("descripcion")]
         public string? descripcion { get; set; }
 
-        public Tipo_Evento_Model? tipo_evento_id { get; set; }
+        [ForeignKey("Tipo_Eventos")]
+        [Column("tipo_evento_id")]
+        public int? tipo_evento_id { get; set; }
     }
 }
