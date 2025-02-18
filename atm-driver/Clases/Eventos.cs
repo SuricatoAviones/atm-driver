@@ -34,6 +34,7 @@ namespace atm_driver.Clases
             {
                 Console.WriteLine("Tipo de evento no identificado.");
             }
+
         }
 
         public void ValidarObservaciones()
