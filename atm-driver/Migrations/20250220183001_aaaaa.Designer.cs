@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using atm_driver.Clases;
 
@@ -11,9 +12,11 @@ using atm_driver.Clases;
 namespace atm_driver.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250220183001_aaaaa")]
+    partial class aaaaa
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -310,12 +313,6 @@ namespace atm_driver.Migrations
 
             modelBuilder.Entity("atm_driver.Models.Mensaje_Model", b =>
                 {
-                    b.Property<int>("mensaje_id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("mensaje_id"));
-
                     b.Property<DateTime>("hora_entrada")
                         .HasColumnType("datetime2");
 
@@ -325,11 +322,10 @@ namespace atm_driver.Migrations
                     b.Property<bool?>("origen")
                         .HasColumnType("bit");
 
-                    b.Property<int?>("servicio_id")
-                        .HasColumnType("int")
-                        .HasColumnName("servicio_id");
+                    b.Property<int?>("servicio_id1")
+                        .HasColumnType("int");
 
-                    b.HasKey("mensaje_id");
+                    b.HasIndex("servicio_id1");
 
                     b.ToTable("Mensajes");
                 });
@@ -606,6 +602,15 @@ namespace atm_driver.Migrations
                     b.Navigation("download_id");
 
                     b.Navigation("key_id");
+                });
+
+            modelBuilder.Entity("atm_driver.Models.Mensaje_Model", b =>
+                {
+                    b.HasOne("atm_driver.Models.Servicio_Model", "servicio_id")
+                        .WithMany()
+                        .HasForeignKey("servicio_id1");
+
+                    b.Navigation("servicio_id");
                 });
 
             modelBuilder.Entity("atm_driver.Models.Servicio_Model", b =>

@@ -49,6 +49,10 @@ namespace atm_driver.Clases
             catch (Exception ex)
             {
                 Console.WriteLine($"Error en el servidor: {ex.Message}");
+                Evento evento = new Evento(CodigoEvento.ServidorCliente, $"Error en el servidor: {ex.Message}", null, _servicioId);
+                evento.IdentificarEvento();
+                evento.ValidarObservaciones();
+                evento.EnviarManejadorEventos();
             }
         }
 
@@ -70,7 +74,7 @@ namespace atm_driver.Clases
                     if (cajeroModel == null)
                     {
                         Console.WriteLine($"La IP {clientIp} no está registrada en la base de datos de cajeros. Cerrando conexión.");
-                        Evento evento = new Evento(2, $"Cajero con IP {clientIp} no registrado. Conexión cerrada.", null, _servicioId);
+                        Evento evento = new Evento(CodigoEvento.ComunicacionesNoRegistrado, $"Cajero con IP {clientIp} no registrado. Conexión cerrada.", null, _servicioId);
                         evento.IdentificarEvento();
                         evento.ValidarObservaciones();
                         evento.EnviarManejadorEventos();
@@ -83,7 +87,7 @@ namespace atm_driver.Clases
                         Cajero cajero = new Cajero
                         {
                             Id = cajeroModel.cajero_id,
-                            Codigo = int.Parse(cajeroModel.codigo),
+                            Codigo = int.TryParse(cajeroModel.codigo, out int codigo) ? codigo : 0,
                             Nombre = cajeroModel.nombre,
                             Marca = cajeroModel.marca,
                             Modelo = cajeroModel.modelo,
@@ -94,7 +98,7 @@ namespace atm_driver.Clases
                             Cliente = client // Asignar el TcpClient al cajero
                         };
                         Program.AgregarCajero(cajeroModel);
-                        Evento evento = new Evento(1, $"Cajero con IP {clientIp} conectado.", cajeroModel.cajero_id, _servicioId);
+                        Evento evento = new Evento(CodigoEvento.Comunicaciones, $"Cajero con IP {clientIp} conectado.", cajeroModel.cajero_id, _servicioId);
                         evento.IdentificarEvento();
                         evento.ValidarObservaciones();
                         evento.EnviarManejadorEventos();
@@ -121,13 +125,29 @@ namespace atm_driver.Clases
 
                         bytesRead = await stream.ReadAsync(buffer, 0, originalNumber);
                         Console.WriteLine($"Cantidad de Bytes Recibidos: {bytesRead}");
-                        Console.WriteLine($"Mensaje Recibido: {Encoding.UTF8.GetString(buffer, 0, bytesRead)}");
+                        string mensajeRecibido = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                        Console.WriteLine($"Mensaje Recibido: {mensajeRecibido}");
+
+                        // Guardar el mensaje en la base de datos utilizando la clase Mensaje
+                        var mensajeModel = new Mensaje_Model
+                        {
+                            mensaje = mensajeRecibido,
+                            origen = true, // Asumiendo que el origen es siempre true
+                            hora_entrada = DateTime.Now,
+                            servicio_id = _servicioId
+                        };
+                        var mensaje = new Mensaje(mensajeModel);
+                        mensaje.GuardarMensaje();
                     }
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error manejando cliente: {ex.Message}");
+                Evento evento = new Evento(CodigoEvento.ServidorCliente, $"Error manejando cliente: {ex.Message}", cajeroModel?.cajero_id, _servicioId);
+                evento.IdentificarEvento();
+                evento.ValidarObservaciones();
+                evento.EnviarManejadorEventos();
             }
             finally
             {

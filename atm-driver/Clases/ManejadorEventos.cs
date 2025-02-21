@@ -10,7 +10,7 @@ namespace atm_driver.Clases
     public class ManejadorEventos
     {
         public int Id { get; set; }
-        public int CodigoEvento { get; set; }
+        public CodigoEvento CodigoEvento { get; set; }
         public string? Observaciones { get; set; }
         public int? CajeroId { get; set; }
         public int? ServicioId { get; set; }

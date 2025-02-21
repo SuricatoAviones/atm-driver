@@ -102,7 +102,7 @@ namespace atm_driver.Clases
 
         private static void RegistrarErrorBaseDatos(string mensajeError)
         {
-            Evento evento = new Evento(3, mensajeError, null, 1); // Código de evento 3 para errores de base de datos
+            Evento evento = new Evento(CodigoEvento.BaseDeDatos, mensajeError, null, 1); // Código de evento 3 para errores de base de datos
             evento.IdentificarEvento();
             evento.ValidarObservaciones();
             evento.EnviarManejadorEventos();

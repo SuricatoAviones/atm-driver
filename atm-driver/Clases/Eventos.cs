@@ -5,12 +5,12 @@ namespace atm_driver.Clases
 {
     public class Evento
     {
-        public int CodigoEvento { get; set; }
+        public CodigoEvento CodigoEvento { get; set; }
         public string? Observaciones { get; set; }
         public int? CajeroId { get; set; }
         public int? ServicioId { get; set; }
 
-        public Evento(int codigoEvento, string? observaciones = null, int? cajeroId = null, int? servicioId = null)
+        public Evento(CodigoEvento codigoEvento, string? observaciones = null, int? cajeroId = null, int? servicioId = null)
         {
             CodigoEvento = codigoEvento;
             Observaciones = observaciones;
@@ -22,19 +22,22 @@ namespace atm_driver.Clases
         {
             // Lógica para identificar el tipo de evento
             Console.WriteLine("Identificando tipo de evento...");
-            if (CodigoEvento == 1 || CodigoEvento == 2)
+            switch (CodigoEvento)
             {
-                Console.WriteLine("Evento de Comunicaciones identificado.");
+                case CodigoEvento.Comunicaciones:
+                case CodigoEvento.ComunicacionesNoRegistrado:
+                    Console.WriteLine("Evento de Comunicaciones identificado.");
+                    break;
+                case CodigoEvento.BaseDeDatos:
+                    Console.WriteLine("Evento de Base de Datos identificado.");
+                    break;
+                case CodigoEvento.ServidorCliente:
+                    Console.WriteLine("Evento de Servidor o Cliente identificado.");
+                    break;
+                default:
+                    Console.WriteLine("Tipo de evento no identificado.");
+                    break;
             }
-            else if (CodigoEvento == 3)
-            {
-                Console.WriteLine("Evento de Base de Datos identificado.");
-            }
-            else
-            {
-                Console.WriteLine("Tipo de evento no identificado.");
-            }
-
         }
 
         public void ValidarObservaciones()
@@ -57,7 +60,7 @@ namespace atm_driver.Clases
             Console.WriteLine("Enviando evento al manejador de eventos...");
             ManejadorEventos manejador = new ManejadorEventos
             {
-                CodigoEvento = CodigoEvento,
+                CodigoEvento = (CodigoEvento)(int)CodigoEvento,
                 Observaciones = Observaciones,
                 CajeroId = CajeroId,
                 ServicioId = ServicioId
@@ -66,13 +69,13 @@ namespace atm_driver.Clases
             manejador.ProcesarEvento();
         }
 
-        public static void GuardarEvento(int codigoEvento, string observaciones, int? cajeroId, int? servicioId)
+        public static void GuardarEvento(CodigoEvento codigoEvento, string observaciones, int? cajeroId, int? servicioId)
         {
             using (var context = new AppDbContext())
             {
                 var evento = new Eventos_Model
                 {
-                    codigo_evento_id = codigoEvento,
+                    codigo_evento_id = (int)codigoEvento,
                     fecha = DateTime.Now,
                     observaciones = observaciones,
                     cajero_id = cajeroId,
