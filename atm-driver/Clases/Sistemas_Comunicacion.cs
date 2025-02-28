@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using atm_driver.Models;
 using AtmDriver;
+using Microsoft.EntityFrameworkCore;
 
 namespace atm_driver.Clases
 {
@@ -16,13 +17,15 @@ namespace atm_driver.Clases
         private TcpListener _server;
         private bool _isRunning;
         private readonly int _servicioId;
+        private readonly AppDbContext _context;
 
-        public Sistemas_Comunicacion(string serverIp, int port, int servicioId)
+        public Sistemas_Comunicacion(string serverIp, int port, int servicioId, AppDbContext context)
         {
             _serverIp = serverIp;
             _port = port;
             _server = new TcpListener(IPAddress.Any, port);
             _servicioId = servicioId;
+            _context = context;
         }
 
         public async Task Inicializar()
@@ -70,7 +73,7 @@ namespace atm_driver.Clases
                     Console.WriteLine($"Cliente conectado desde la IP: {clientIp}");
 
                     // Verificar si la IP está en la base de datos
-                    cajeroModel = Servicio.VerificarIpCajero(clientIp);
+                    cajeroModel = Servicio.VerificarIpCajero(clientIp, _context);
                     if (cajeroModel == null)
                     {
                         Console.WriteLine($"La IP {clientIp} no está registrada en la base de datos de cajeros. Cerrando conexión.");
@@ -84,6 +87,13 @@ namespace atm_driver.Clases
                     else
                     {
                         Console.WriteLine($"La IP {clientIp} está registrada en la base de datos de cajeros.");
+
+                        // Cargar la entidad Keys_Model relacionada
+                        var keyModel = await _context.Keys.FindAsync(cajeroModel.key_id);
+                        // Inicializar la clase Download
+                        var download = new Download();
+                        await download.Inicializar(cajeroModel.download_id.Value, _context);
+
                         Cajero cajero = new Cajero
                         {
                             Id = cajeroModel.cajero_id,
@@ -91,17 +101,23 @@ namespace atm_driver.Clases
                             Nombre = cajeroModel.nombre,
                             Marca = cajeroModel.marca,
                             Modelo = cajeroModel.modelo,
-                            ClaveComunicacion = cajeroModel.key_id?.clave_comunicacion,
-                            ClaveMasterKey = cajeroModel.key_id?.clave_masterKey,
                             Localizacion = cajeroModel.localizacion,
                             Estado = cajeroModel.estado,
-                            Cliente = client // Asignar el TcpClient al cajero
+                            ClaveComunicacion = keyModel?.clave_comunicacion ?? string.Empty,
+                            ClaveMasterKey = keyModel?.clave_masterKey ?? string.Empty,
+                            Cliente = client
                         };
                         Program.AgregarCajero(cajeroModel);
                         Evento evento = new Evento(CodigoEvento.Comunicaciones, $"Cajero con IP {clientIp} conectado.", cajeroModel.cajero_id, _servicioId);
                         evento.IdentificarEvento();
                         evento.ValidarObservaciones();
                         evento.EnviarManejadorEventos();
+
+                        // Enviar las líneas del archivo de configuración al cajero
+                        foreach (var linea in download.Lineas)
+                        {
+                            await EnviarMensaje_EsperarRespuesta(linea, cajero, stream);
+                        }
                     }
 
                     byte[] buffer = new byte[1024];
@@ -157,6 +173,31 @@ namespace atm_driver.Clases
                     Program.RetirarCajero(cajeroModel.cajero_id);
                 }
             }
+        }
+
+        private async Task EnviarMensaje_EsperarRespuesta(string mensaje, Cajero cajero, NetworkStream stream)
+        {
+            // Enviar el mensaje al cajero
+            byte[] mensajeBytes = Encoding.UTF8.GetBytes(mensaje);
+            await stream.WriteAsync(mensajeBytes, 0, mensajeBytes.Length);
+            Console.WriteLine($"Enviado: {mensaje}");
+
+            // Guardar el mensaje enviado en la base de datos con origen false
+            var mensajeModel = new Mensaje_Model
+            {
+                mensaje = mensaje,
+                origen = false,
+                hora_entrada = DateTime.Now,
+                servicio_id = _servicioId
+            };
+            var mensajeGuardado = new Mensaje(mensajeModel);
+            mensajeGuardado.GuardarMensaje();
+
+            // Esperar la respuesta del cajero
+            byte[] buffer = new byte[1024];
+            int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+            string respuesta = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+            Console.WriteLine($"Respuesta recibida: {respuesta}");
         }
 
         public void CerrarConexion()

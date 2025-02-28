@@ -1,6 +1,7 @@
 ﻿using atm_driver.Models;
 using System;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace atm_driver.Clases
 {
@@ -11,18 +12,18 @@ namespace atm_driver.Clases
         private readonly DateTime _fechaRecepcion;
 
         // Constructor para inicializar desde Servicio_Model
-        public HostAutorizador(Servicio_Model servicioModel, DateTime fechaEnvio, DateTime fechaRecepcion)
-            : base(servicioModel) // Llamada al constructor de la clase base (Servicio)
+        public HostAutorizador(Servicio_Model servicioModel, AppDbContext context, DateTime fechaEnvio, DateTime fechaRecepcion)
+            : base(servicioModel, context) // Llamada al constructor de la clase base (Servicio)
         {
             _fechaEnvio = fechaEnvio;
             _fechaRecepcion = fechaRecepcion;
         }
 
         // Método para inicializar el host autorizador
-        public async  new Task Inicializar()
+        public async new Task Inicializar()
         {
             Console.WriteLine("Inicializando Host Autorizador");
-            base.Inicializar(); // Llama al método Inicializar de la clase base (Servicio)
+            await base.Inicializar(); // Llama al método Inicializar de la clase base (Servicio)
         }
 
         // Método para verificar la conexión
@@ -47,22 +48,19 @@ namespace atm_driver.Clases
         }
 
         // Método estático para obtener un host autorizador desde la base de datos
-        public static HostAutorizador ObtenerHostAutorizadorDesdeBaseDeDatos(int servicioId, DateTime fechaEnvio, DateTime fechaRecepcion)
+        public static HostAutorizador ObtenerHostAutorizadorDesdeBaseDeDatos(int servicioId, DateTime fechaEnvio, DateTime fechaRecepcion, AppDbContext context)
         {
-            using (var context = new AppDbContext())
+            var servicioModel = context.Servicios
+                .Include(s => s.sistema_comunicacion_id)
+                .Include(s => s.tipo_mensaje_id)
+                .FirstOrDefault(s => s.servicio_id == servicioId);
+
+            if (servicioModel == null)
             {
-                var servicioModel = context.Servicios
-                    .Include(s => s.sistema_comunicacion_id)
-                    .Include(s => s.tipo_mensaje_id)
-                    .FirstOrDefault(s => s.servicio_id == servicioId);
-
-                if (servicioModel == null)
-                {
-                    throw new InvalidOperationException($"No se encontró el servicio con ID {servicioId}");
-                }
-
-                return new HostAutorizador(servicioModel, fechaEnvio, fechaRecepcion);
+                throw new InvalidOperationException($"No se encontró el servicio con ID {servicioId}");
             }
+
+            return new HostAutorizador(servicioModel, context, fechaEnvio, fechaRecepcion);
         }
     }
 }

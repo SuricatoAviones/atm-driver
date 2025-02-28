@@ -13,8 +13,8 @@ namespace atm_driver.Clases
         private readonly string _claveCommunications;
 
         // Constructor para inicializar desde Servicio_Model
-        public Encriptador(Servicio_Model servicioModel, string claveMasterKey, DateTime fechaRecepcionInfo, DateTime fechaEnvioInfo, string claveCommunications)
-            : base(servicioModel) // Llamada al constructor de la clase base (Servicio)
+        public Encriptador(Servicio_Model servicioModel, AppDbContext context, string claveMasterKey, DateTime fechaRecepcionInfo, DateTime fechaEnvioInfo, string claveCommunications)
+            : base(servicioModel, context) // Llamada al constructor de la clase base (Servicio)
         {
             _claveMasterKey = claveMasterKey ?? throw new ArgumentNullException(nameof(claveMasterKey));
             _fechaRecepcionInfo = fechaRecepcionInfo;
@@ -23,10 +23,10 @@ namespace atm_driver.Clases
         }
 
         // Método para inicializar el encriptador
-        public new void Inicializar()
+        public new async Task Inicializar()
         {
             Console.WriteLine("Inicializando Encriptador");
-            base.Inicializar(); // Llama al método Inicializar de la clase base (Servicio)
+            await base.Inicializar(); // Llama al método Inicializar de la clase base (Servicio)
         }
 
         // Método para validar las claves
@@ -43,7 +43,6 @@ namespace atm_driver.Clases
             Console.WriteLine("Encriptando Información");
             // Lógica de encriptación aquí
         }
-
-        
     }
 }
+

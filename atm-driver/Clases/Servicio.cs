@@ -21,9 +21,10 @@ namespace atm_driver.Clases
         private readonly Tipo_Mensaje_Model? _tipoMensaje;
         private readonly Sistemas_Comunicacion_Model? _tipoComunicacion;
         private readonly int _servicioId;
+        private readonly AppDbContext _context;
 
         // Constructor para inicializar desde base de datos
-        public Servicio(Servicio_Model servicioModel)
+        public Servicio(Servicio_Model servicioModel, AppDbContext context)
         {
             _serverIp = servicioModel.sistema_comunicacion_id?.direccion_ip ?? throw new ArgumentNullException(nameof(servicioModel.sistema_comunicacion_id.direccion_ip));
             _port = int.TryParse(servicioModel.sistema_comunicacion_id?.puerto_tcp, out var port) ? port : throw new ArgumentNullException(nameof(servicioModel.sistema_comunicacion_id.puerto_tcp));
@@ -36,6 +37,7 @@ namespace atm_driver.Clases
             _tipoMensaje = servicioModel.tipo_mensaje_id;
             _tipoComunicacion = servicioModel.sistema_comunicacion_id;
             _servicioId = servicioModel.servicio_id;
+            _context = context;
         }
 
         public async Task Inicializar()
@@ -43,7 +45,7 @@ namespace atm_driver.Clases
             Console.WriteLine("Inicializando Servicio");
 
             // Clase Sistemas_Comunicacion
-            Sistemas_Comunicacion sistemasComunicacion = new Sistemas_Comunicacion(_serverIp, _port, _servicioId);
+            Sistemas_Comunicacion sistemasComunicacion = new Sistemas_Comunicacion(_serverIp, _port, _servicioId, _context);
             await sistemasComunicacion.Inicializar();
         }
 
@@ -57,24 +59,21 @@ namespace atm_driver.Clases
             Console.WriteLine("Reiniciando Servicio");
         }
 
-        public static Servicio ObtenerServicioDesdeBaseDeDatos(int servicioId)
+        public static Servicio ObtenerServicioDesdeBaseDeDatos(int servicioId, AppDbContext context)
         {
             try
             {
-                using (var context = new AppDbContext())
+                var servicioModel = context.Servicios
+                    .Include(s => s.sistema_comunicacion_id)
+                    .Include(s => s.tipo_mensaje_id)
+                    .FirstOrDefault(s => s.servicio_id == servicioId);
+
+                if (servicioModel == null)
                 {
-                    var servicioModel = context.Servicios
-                        .Include(s => s.sistema_comunicacion_id)
-                        .Include(s => s.tipo_mensaje_id)
-                        .FirstOrDefault(s => s.servicio_id == servicioId);
-
-                    if (servicioModel == null)
-                    {
-                        throw new InvalidOperationException($"No se encontró el servicio con ID {servicioId}");
-                    }
-
-                    return new Servicio(servicioModel);
+                    throw new InvalidOperationException($"No se encontró el servicio con ID {servicioId}");
                 }
+
+                return new Servicio(servicioModel, context);
             }
             catch (Exception ex)
             {
@@ -84,14 +83,11 @@ namespace atm_driver.Clases
         }
 
         // Modificar método para devolver el objeto Cajeros_Model si la IP está en la base de datos
-        public static Cajeros_Model? VerificarIpCajero(string ip)
+        public static Cajeros_Model? VerificarIpCajero(string ip, AppDbContext context)
         {
             try
             {
-                using (var context = new AppDbContext())
-                {
-                    return context.Cajeros.FirstOrDefault(c => c.direccion_ip == ip);
-                }
+                return context.Cajeros.FirstOrDefault(c => c.direccion_ip == ip);
             }
             catch (Exception ex)
             {

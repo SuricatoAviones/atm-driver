@@ -20,8 +20,19 @@ namespace atm_driver.Models
         public string? localizacion { get; set; }
         public string? estado { get; set; }
         public string? direccion_ip { get; set; }
-        public Download_Model? download_id { get; set; }
-        public Keys_Model? key_id { get; set; }
+
+        [ForeignKey("Downloads")]
+        [Column("download_id")]
+        public int? download_id { get; set; }
+
+        [ForeignKey("Keys")]
+        [Column("key_id")]
+        public int? key_id { get; set; }
+
+        // Propiedad de navegación
+        public virtual Keys_Model? Key { get; set; }
+        public virtual Download_Model? Download { get; set; }
+
 
     }
 

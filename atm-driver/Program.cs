@@ -1,8 +1,8 @@
-﻿// atm-driver/Program.cs
-using System;
-using System.Collections.Generic;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using atm_driver.Clases;
 using atm_driver.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace AtmDriver
 {
@@ -13,11 +13,13 @@ namespace AtmDriver
 
         static async Task Main(string[] args)
         {
-            try
+            var host = CreateHostBuilder(args).Build();
+            using (var scope = host.Services.CreateScope())
             {
-                // Verificar conexión
-                using (var context = AppDbContext.Create())
+                var services = scope.ServiceProvider;
+                try
                 {
+                    var context = services.GetRequiredService<AppDbContext>();
                     if (context.Database.CanConnect())
                     {
                         Console.WriteLine("Conexión a la base de datos exitosa.");
@@ -26,71 +28,77 @@ namespace AtmDriver
                     {
                         Console.WriteLine("Error al conectar a la base de datos.");
                     }
-                }
 
-                // Mostrar menú
-                while (true)
-                {
-                    Console.WriteLine("Seleccione una opción:");
-                    Console.WriteLine("1. Red de Cajeros");
-                    Console.WriteLine("2. Encriptador");
-                    Console.WriteLine("3. Host Autorizador");
-                    Console.WriteLine("4. Ver Cajeros Conectados");
-                    Console.WriteLine("5. Salir");
-                    Console.Write("Opción: ");
-                    string opcion = Console.ReadLine();
-
-                    switch (opcion)
+                    // Mostrar menú
+                    while (true)
                     {
-                        case "1":
-                            try
-                            {
-                                var servicio = Servicio.ObtenerServicioDesdeBaseDeDatos(1); // Reemplaza 1 con el ID del servicio que deseas obtener
-                                await servicio.Inicializar();
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Error: {ex.Message}");
-                            }
-                            break;
-                        case "2":
-                            try
-                            {
-                                /*var host_autorizador = new HostAutorizador();
-                                await host_autorizador.Inicializar();*/
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Error: {ex.Message}");
-                            }
-                            break;
-                        case "3":
-                            try
-                            {
-                                var servicio = Servicio.ObtenerServicioDesdeBaseDeDatos(3); // Reemplaza 3 con el ID del servicio que deseas obtener
-                                await servicio.Inicializar();
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Error: {ex.Message}");
-                            }
-                            break;
-                        case "4":
-                            MostrarCajeros();
-                            break;
-                        case "5":
-                            return;
-                        default:
-                            Console.WriteLine("Opción no válida. Intente de nuevo.");
-                            break;
+                        Console.WriteLine("Seleccione una opción:");
+                        Console.WriteLine("1. Red de Cajeros");
+                        Console.WriteLine("2. Encriptador");
+                        Console.WriteLine("3. Host Autorizador");
+                        Console.WriteLine("4. Ver Cajeros Conectados");
+                        Console.WriteLine("5. Salir");
+                        Console.Write("Opción: ");
+                        string opcion = Console.ReadLine();
+
+                        switch (opcion)
+                        {
+                            case "1":
+                                try
+                                {
+                                    var servicio = Servicio.ObtenerServicioDesdeBaseDeDatos(1, context); // Reemplaza 1 con el ID del servicio que deseas obtener
+                                    await servicio.Inicializar();
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"Error: {ex.Message}");
+                                }
+                                break;
+                            case "2":
+                                try
+                                {
+                                    // Lógica para inicializar el encriptador
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"Error: {ex.Message}");
+                                }
+                                break;
+                            case "3":
+                                try
+                                {
+                                    var hostAutorizador = HostAutorizador.ObtenerHostAutorizadorDesdeBaseDeDatos(3, DateTime.Now, DateTime.Now, context); // Reemplaza 3 con el ID del servicio que deseas obtener
+                                    await hostAutorizador.Inicializar();
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"Error: {ex.Message}");
+                                }
+                                break;
+                            case "4":
+                                MostrarCajeros();
+                                break;
+                            case "5":
+                                return;
+                            default:
+                                Console.WriteLine("Opción no válida. Intente de nuevo.");
+                                break;
+                        }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Se produjo un error: {ex.Message}");
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Se produjo un error: {ex.Message}");
+                }
             }
         }
+
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureServices((_, services) =>
+                    services.AddDbContext<AppDbContext>(options =>
+                        options.UseSqlServer("Server=LUISGUTIERREZ-P\\SQLEXPRESS2;Database=atm-driver;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True"))
+                    .AddScoped<Servicio>());
 
         // Método estático para agregar un cajero a la lista
         public static void AgregarCajero(Cajeros_Model cajero)

@@ -68,11 +68,19 @@ namespace atm_driver.Migrations
                     b.Property<string>("direccion_ip")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("download_id")
+                        .HasColumnType("int")
+                        .HasColumnName("download_id");
+
                     b.Property<int?>("download_id1")
                         .HasColumnType("int");
 
                     b.Property<string>("estado")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("key_id")
+                        .HasColumnType("int")
+                        .HasColumnName("key_id");
 
                     b.Property<int?>("key_id1")
                         .HasColumnType("int");
@@ -595,17 +603,17 @@ namespace atm_driver.Migrations
 
             modelBuilder.Entity("atm_driver.Models.Cajeros_Model", b =>
                 {
-                    b.HasOne("atm_driver.Models.Download_Model", "download_id")
+                    b.HasOne("atm_driver.Models.Download_Model", "Download")
                         .WithMany()
                         .HasForeignKey("download_id1");
 
-                    b.HasOne("atm_driver.Models.Keys_Model", "key_id")
+                    b.HasOne("atm_driver.Models.Keys_Model", "Key")
                         .WithMany()
                         .HasForeignKey("key_id1");
 
-                    b.Navigation("download_id");
+                    b.Navigation("Download");
 
-                    b.Navigation("key_id");
+                    b.Navigation("Key");
                 });
 
             modelBuilder.Entity("atm_driver.Models.Servicio_Model", b =>
