@@ -31,6 +31,8 @@ namespace atm_driver.Clases
             EstablecerConfiguracion();
         }
 
+ 
+
         public void EstablecerConfiguracion()
         {
             try
