@@ -71,90 +71,91 @@ namespace atm_driver.Clases
                     // Obtener la IP del cliente
                     IPEndPoint remoteEndPoint = client.Client.RemoteEndPoint as IPEndPoint;
                     string clientIp = remoteEndPoint?.Address.ToString();
-                    Console.WriteLine($"🔗 Cliente conectado desde la IP: {clientIp}");
+                    Console.WriteLine($"Cliente conectado desde la IP: {clientIp}");
 
                     // Verificar si la IP está en la base de datos
                     cajeroModel = Servicio.VerificarIpCajero(clientIp, _context);
                     if (cajeroModel == null)
                     {
-                        Console.WriteLine($"⚠️ La IP {clientIp} no está registrada en la base de datos de cajeros. Cerrando conexión.");
-                        new Evento(CodigoEvento.ComunicacionesNoRegistrado, $"Cajero con IP {clientIp} no registrado. Conexión cerrada.", null, _servicioId);
+                        Console.WriteLine($"La IP {clientIp} no está registrada en la base de datos de cajeros. Cerrando conexión.");
+                        Evento evento = new Evento(CodigoEvento.ComunicacionesNoRegistrado, $"Cajero con IP {clientIp} no registrado. Conexión cerrada.", null, _servicioId);
+                        evento.IdentificarEvento();
+                        evento.ValidarObservaciones();
+                        evento.EnviarManejadorEventos();
                         client.Close();
                         return;
                     }
-
-                    Console.WriteLine($"✅ Cajero {cajeroModel.nombre} (ID: {cajeroModel.cajero_id}, IP: {clientIp}) está registrado.");
-
-                    // Cargar la entidad Keys_Model relacionada
-                    var keyModel = await _context.Keys.FindAsync(cajeroModel.key_id);
-                    // Inicializar la clase Download
-                    var download = new Download();
-                    await download.Inicializar(cajeroModel.download_id.Value, _context);
-
-                    Cajero cajero = new Cajero
+                    else
                     {
-                        Id = cajeroModel.cajero_id,
-                        Codigo = int.TryParse(cajeroModel.codigo, out int codigo) ? codigo : 0,
-                        Nombre = cajeroModel.nombre,
-                        Marca = cajeroModel.marca,
-                        Modelo = cajeroModel.modelo,
-                        Localizacion = cajeroModel.localizacion,
-                        Estado = cajeroModel.estado,
-                        ClaveComunicacion = keyModel?.clave_comunicacion ?? string.Empty,
-                        ClaveMasterKey = keyModel?.clave_masterKey ?? string.Empty,
-                        Cliente = client
-                    };
+                        Console.WriteLine($"La IP {clientIp} está registrada en la base de datos de cajeros.");
 
-                    Program.AgregarCajero(cajeroModel);
-                    new Evento(CodigoEvento.Comunicaciones, $"Cajero {cajeroModel.nombre} (ID: {cajeroModel.cajero_id}, IP: {clientIp}) conectado.", cajeroModel.cajero_id, _servicioId);
+                        // Cargar la entidad Keys_Model relacionada
+                        var keyModel = await _context.Keys.FindAsync(cajeroModel.key_id);
+                        // Inicializar la clase Download
+                        var download = new Download();
+                        await download.Inicializar(cajeroModel.download_id.Value, _context);
 
-                    // Enviar las líneas del archivo de configuración al cajero
-                    foreach (var linea in download.Lineas)
-                    {
-                        await EnviarMensaje_EsperarRespuesta(StringUtils.FormatDownloadString(linea), cajero, stream);
+                        Cajero cajero = new Cajero
+                        {
+                            Id = cajeroModel.cajero_id,
+                            Codigo = int.TryParse(cajeroModel.codigo, out int codigo) ? codigo : 0,
+                            Nombre = cajeroModel.nombre,
+                            Marca = cajeroModel.marca,
+                            Modelo = cajeroModel.modelo,
+                            Localizacion = cajeroModel.localizacion,
+                            Estado = cajeroModel.estado,
+                            ClaveComunicacion = keyModel?.clave_comunicacion ?? string.Empty,
+                            ClaveMasterKey = keyModel?.clave_masterKey ?? string.Empty,
+                            Cliente = client
+                        };
+                        Program.AgregarCajero(cajeroModel);
+                        Evento evento = new Evento(CodigoEvento.Comunicaciones, $"Cajero con IP {clientIp} conectado.", cajeroModel.cajero_id, _servicioId);
+                        evento.IdentificarEvento();
+                        evento.ValidarObservaciones();
+                        evento.EnviarManejadorEventos();
+
+                        // Enviar las líneas del archivo de configuración al cajero
+                        foreach (var linea in download.Lineas)
+                        {
+                            await EnviarMensaje_EsperarRespuesta(StringUtils.FormatDownloadString(linea), cajero, stream);
+                        }
+
+                        // Mostrar mensaje y guardar evento cuando se terminen todas las líneas del Download
+                        Console.WriteLine($"Cajero en Línea: ID = {cajero.Id}, IP = {clientIp}");
+                        Evento eventoDownload = new Evento(CodigoEvento.Download, "Download terminado", cajeroModel.cajero_id, _servicioId);
+                        eventoDownload.IdentificarEvento();
+                        eventoDownload.ValidarObservaciones();
+                        eventoDownload.EnviarManejadorEventos();
                     }
 
-                    // Bucle para recibir mensajes
-                    while (client.Connected)
+                    while (true)
                     {
-                        try
-                        {
-                            await RecibirMensaje(stream);
-                        }
-                        catch (IOException)
-                        {
-                            // Detectamos desconexión abrupta
-                            Console.WriteLine($"❌ Cajero {cajeroModel.nombre} (ID: {cajeroModel.cajero_id}, IP: {clientIp}) se ha desconectado abruptamente.");
-                            new Evento(CodigoEvento.Comunicaciones, $"Cajero {cajeroModel.nombre} (ID: {cajeroModel.cajero_id}, IP: {clientIp}) se ha desconectado.", cajeroModel.cajero_id, _servicioId);
-                            break;
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"⚠️ Error procesando mensaje de {cajeroModel.nombre} (ID: {cajeroModel.cajero_id}): {ex.Message}");
-                            new Evento(CodigoEvento.ServidorCliente, $"Error procesando mensaje de {cajeroModel.nombre}: {ex.Message}", cajeroModel.cajero_id, _servicioId);
-                            break;
-                        }
+                        await RecibirMensaje(stream);
                     }
                 }
-            }
-            catch (IOException ex)
-            {
-                Console.WriteLine($"❌ Conexión perdida con cajero {cajeroModel?.nombre} (ID: {cajeroModel?.cajero_id}, IP: {cajeroModel?.direccion_ip}): {ex.Message}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"⚠️ Error manejando cliente {cajeroModel?.nombre} (ID: {cajeroModel?.cajero_id}, IP: {cajeroModel?.direccion_ip}): {ex.Message}");
-                new Evento(CodigoEvento.ServidorCliente, $"Error manejando cliente {cajeroModel?.nombre}: {ex.Message}", cajeroModel?.cajero_id, _servicioId);
+                Console.WriteLine($"Error manejando cliente: {ex.Message}");
+                Evento evento = new Evento(CodigoEvento.ServidorCliente, $"Error manejando cliente: {ex.Message}", cajeroModel?.cajero_id, _servicioId);
+                evento.IdentificarEvento();
+                evento.ValidarObservaciones();
+                evento.EnviarManejadorEventos();
             }
             finally
             {
+                // Retirar el cajero de la lista cuando se desconecte
                 if (cajeroModel != null)
                 {
-                    Console.WriteLine($"🔌 Desconectando cajero {cajeroModel.nombre} (ID: {cajeroModel.cajero_id}, IP: {cajeroModel.direccion_ip})...");
                     Program.RetirarCajero(cajeroModel.cajero_id);
+                    Evento evento = new Evento(CodigoEvento.Comunicaciones, $"Cajero con IP {cajeroModel.direccion_ip} desconectado.", cajeroModel.cajero_id, _servicioId);
+                    evento.IdentificarEvento();
+                    evento.ValidarObservaciones();
+                    evento.EnviarManejadorEventos();
                 }
             }
         }
+
 
 
         private async Task EnviarMensaje_EsperarRespuesta(string mensaje, Cajero cajero, NetworkStream stream)
