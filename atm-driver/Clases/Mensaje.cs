@@ -57,7 +57,9 @@ namespace atm_driver.Clases
 
                 context.Mensajes.Add(mensajeModel);
                 context.SaveChanges();
+                Console.WriteLine($"Mensaje guardado: {_mensaje}, Origen: {_origen}, Hora: {_hora_entrada}, Servicio ID: {_servicio.servicio_id}");
             }
         }
+
     }
 }

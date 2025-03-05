@@ -10,7 +10,7 @@ namespace atm_driver.Clases
         public int Id { get; set; }
         public string Nombre { get; set; }
         public string Ruta { get; set; }
-        public string[] Lineas { get; private set; } // Nueva propiedad para almacenar todas las líneas
+        public string[] Lineas { get; private set; } // Propiedad para almacenar las líneas
 
         public async Task Inicializar(int downloadId, AppDbContext context)
         {
@@ -24,21 +24,17 @@ namespace atm_driver.Clases
             Nombre = downloadModel.nombre;
             Ruta = downloadModel.ruta;
 
-            // Mostrar los datos de la tabla Download
             Console.WriteLine($"Datos de Download para el ID {downloadId}:");
             Console.WriteLine($"Nombre: {Nombre}");
             Console.WriteLine($"Ruta: {Ruta}");
             EstablecerConfiguracion();
         }
 
- 
-
         public void EstablecerConfiguracion()
         {
             try
             {
-                // Leer el archivo de configuración
-                string filePath = Path.Combine(Ruta /*, "download.txt"*/);
+                string filePath = Path.Combine(Ruta);
                 if (!File.Exists(filePath))
                 {
                     throw new FileNotFoundException("El archivo de configuración no se encontró.", filePath);
