@@ -6,7 +6,16 @@ namespace atm_driver.Utils
 {
     public static class StringUtils
     {
-        public static string FormatDownloadString(string linea)
+        public static string FormatDownloadNDC(string linea)
+        {
+            foreach (var (clave, valor) in DiccionarioData.Reemplazos)
+            {
+                linea = linea.Replace(clave, valor);
+            }
+            return linea;
+        }
+
+        public static string FormatDownloadTCS(string linea)
         {
             foreach (var (clave, valor) in DiccionarioData.Reemplazos)
             {
