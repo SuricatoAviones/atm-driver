@@ -99,22 +99,24 @@ namespace atm_driver.Clases
                 // Enviar las líneas del archivo de configuración al cajero
                 while (_lineaActual < Lineas.Length)
                 {
-                    string linea = Lineas[_lineaActual];
-                    string mensajeFormateado = StringUtils.FormatDownloadNDC(linea);
-
-                    // Enviar mensaje al cajero y esperar respuesta
-                    await sistemasComunicacion.EnviarMensaje(mensajeFormateado, cajero, stream);
+                    bool hayMasLineas = await EnviarSiguienteLinea(cajero, sistemasComunicacion, stream);
+                    if (!hayMasLineas)
+                    {
+                        break;
+                    }
 
                     // Recibir el mensaje de respuesta del cajero
                     string mensajeRecibido = await sistemasComunicacion.RecibirMensaje(stream, this, cajero);
 
-                    if (!string.IsNullOrEmpty(mensajeRecibido))
-                    {
-                        char ultimoCaracter = mensajeRecibido[mensajeRecibido.Length - 1];
+                    // Separar el mensaje recibido en un arreglo usando el separador de campo (ASCII 28)
+                    string[] elementos = mensajeRecibido.Split((char)28);
 
-                        if (DiccionarioData.IllegalCommands.ContainsKey(ultimoCaracter.ToString()))
+                    // Verificar si alguno de los elementos contiene un comando ilegal
+                    foreach (var elemento in elementos)
+                    {
+                        if (DiccionarioData.IllegalCommands.ContainsKey(elemento))
                         {
-                            string observacion = DiccionarioData.IllegalCommands[ultimoCaracter.ToString()];
+                            string observacion = DiccionarioData.IllegalCommands[elemento];
                             Evento.GuardarEvento(CodigoEvento.Download, observacion, cajero.Id, sistemasComunicacion.ServicioId);
                             Console.WriteLine($"Deteniendo envío del download: {observacion}");
                             downloadDetenidoLocal = true;
@@ -122,7 +124,10 @@ namespace atm_driver.Clases
                         }
                     }
 
-                    _lineaActual++; // Incrementar la línea actual
+                    if (downloadDetenidoLocal)
+                    {
+                        break;
+                    }
                 }
 
                 if (!downloadDetenidoLocal)
@@ -148,22 +153,24 @@ namespace atm_driver.Clases
                 // Enviar las líneas del archivo de configuración al cajero
                 while (_lineaActual < Lineas.Length)
                 {
-                    string linea = Lineas[_lineaActual];
-                    string mensajeFormateado = StringUtils.FormatDownloadTCS(linea);
-
-                    // Enviar mensaje al cajero y esperar respuesta
-                    await sistemasComunicacion.EnviarMensaje(mensajeFormateado, cajero, stream);
+                    bool hayMasLineas = await EnviarSiguienteLinea(cajero, sistemasComunicacion, stream);
+                    if (!hayMasLineas)
+                    {
+                        break;
+                    }
 
                     // Recibir el mensaje de respuesta del cajero
                     string mensajeRecibido = await sistemasComunicacion.RecibirMensaje(stream, this, cajero);
 
-                    if (!string.IsNullOrEmpty(mensajeRecibido))
-                    {
-                        char ultimoCaracter = mensajeRecibido[mensajeRecibido.Length - 1];
+                    // Separar el mensaje recibido en un arreglo usando el separador de campo (ASCII 28)
+                    string[] elementos = mensajeRecibido.Split((char)28);
 
-                        if (DiccionarioData.IllegalCommands.ContainsKey(ultimoCaracter.ToString()))
+                    // Verificar si alguno de los elementos contiene un comando ilegal
+                    foreach (var elemento in elementos)
+                    {
+                        if (DiccionarioData.IllegalCommands.ContainsKey(elemento))
                         {
-                            string observacion = DiccionarioData.IllegalCommands[ultimoCaracter.ToString()];
+                            string observacion = DiccionarioData.IllegalCommands[elemento];
                             Evento.GuardarEvento(CodigoEvento.Download, observacion, cajero.Id, sistemasComunicacion.ServicioId);
                             Console.WriteLine($"Deteniendo envío del download: {observacion}");
                             downloadDetenidoLocal = true;
@@ -171,7 +178,10 @@ namespace atm_driver.Clases
                         }
                     }
 
-                    _lineaActual++; // Incrementar la línea actual
+                    if (downloadDetenidoLocal)
+                    {
+                        break;
+                    }
                 }
 
                 if (!downloadDetenidoLocal)
@@ -203,4 +213,6 @@ namespace atm_driver.Clases
             return downloadDetenido;
         }
     }
+
+
 }

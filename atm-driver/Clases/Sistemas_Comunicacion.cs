@@ -15,6 +15,7 @@ public class Sistemas_Comunicacion
     private readonly AppDbContext _context;
     private bool _downloadEnProgreso; // Nueva propiedad para rastrear el estado del download
 
+    // Constructor de la clase Sistemas_Comunicacion
     public Sistemas_Comunicacion(string serverIp, int port, int servicioId, AppDbContext context)
     {
         _serverIp = serverIp;
@@ -25,9 +26,10 @@ public class Sistemas_Comunicacion
         _downloadEnProgreso = false; // Inicializar la propiedad
     }
 
-    // Se utiliza para lograr enviarlo a Download
+    // Propiedad para obtener el ID del servicio
     public int ServicioId => _servicioId;
 
+    // Método para inicializar el servidor
     public async Task Inicializar()
     {
         Console.WriteLine("Servidor iniciando...");
@@ -35,6 +37,7 @@ public class Sistemas_Comunicacion
         await EjecutarServidorAsync();
     }
 
+    // Método privado para ejecutar el servidor de manera asíncrona
     private async Task EjecutarServidorAsync()
     {
         try
@@ -59,6 +62,7 @@ public class Sistemas_Comunicacion
         }
     }
 
+    // Método para manejar la conexión de un cliente de manera asíncrona
     public async Task HandleClientAsync(TcpClient client)
     {
         Cajeros_Model? cajeroModel = null;
@@ -71,6 +75,7 @@ public class Sistemas_Comunicacion
                 string clientIp = remoteEndPoint?.Address.ToString();
                 Console.WriteLine($"Cliente conectado desde la IP: {clientIp}");
 
+                // Verificar si la IP del cliente está registrada
                 cajeroModel = Servicio.VerificarIpCajero(clientIp, _context);
                 if (cajeroModel == null)
                 {
@@ -80,10 +85,12 @@ public class Sistemas_Comunicacion
                     return;
                 }
 
+                // Obtener las claves de comunicación del cajero
                 var keyModel = await _context.Keys.FindAsync(cajeroModel.key_id);
                 var download = new Download();
                 await download.Inicializar(cajeroModel.download_id.Value, _context);
 
+                // Crear una instancia de Cajero con los datos obtenidos
                 Cajero cajero = new Cajero
                 {
                     Id = cajeroModel.cajero_id,
@@ -98,14 +105,15 @@ public class Sistemas_Comunicacion
                     Cliente = client
                 };
 
+                // Agregar el cajero a la lista de cajeros conectados
                 Program.AgregarCajero(cajeroModel);
                 Evento.GuardarEvento(CodigoEvento.Comunicaciones, $"Cajero con IP {clientIp} conectado.", cajeroModel.cajero_id, _servicioId);
 
-                // Llamar al método EnviarSiguienteLinea
+                // Iniciar el proceso de descarga
                 _downloadEnProgreso = true; // Marcar que el download está en progreso
-                bool hayMasLineas = await download.EnviarSiguienteLinea(cajero, this, stream);
+                bool downloadDetenido = await download.EnvioDownload(cajero, this, stream);
 
-                if (!hayMasLineas)
+                if (!downloadDetenido)
                 {
                     // Guardar evento al finalizar el download
                     Console.WriteLine($"Cajero en Línea: ID = {cajero.Id}, IP = {clientIp}");
@@ -113,6 +121,7 @@ public class Sistemas_Comunicacion
                     _downloadEnProgreso = false; // Marcar que el download ha terminado
                 }
 
+                // Continuar recibiendo mensajes del cajero
                 while (true)
                 {
                     await RecibirMensaje(stream, download, cajero);
@@ -136,6 +145,7 @@ public class Sistemas_Comunicacion
         }
     }
 
+    // Método para enviar un mensaje al cajero y esperar una respuesta
     public async Task EnviarMensaje_EsperarRespuesta(string mensaje, Cajero cajero, NetworkStream stream)
     {
         // Enviar el mensaje al cajero
@@ -145,28 +155,29 @@ public class Sistemas_Comunicacion
         await RecibirMensaje(stream, null, cajero);
     }
 
+    // Método para enviar un mensaje al cajero
     public async Task EnviarMensaje(string mensaje, Cajero cajero, NetworkStream stream)
     {
-        // 🔹 1. Convertir la longitud del mensaje a 2 bytes en formato Little-Endian
+        // Convertir la longitud del mensaje a 2 bytes en formato Little-Endian
         byte[] lengthBytes = BitConverter.GetBytes((short)mensaje.Length);
         if (BitConverter.IsLittleEndian)
         {
             Array.Reverse(lengthBytes); // Asegurar que se envíe en Little-Endian
         }
 
-        // 🔹 2. Convertir el mensaje a bytes UTF-8
+        // Convertir el mensaje a bytes UTF-8
         byte[] mensajeBytes = Encoding.UTF8.GetBytes(mensaje);
 
-        // 🔹 3. Crear el paquete final (longitud + mensaje)
+        // Crear el paquete final (longitud + mensaje)
         byte[] finalMessage = new byte[lengthBytes.Length + mensajeBytes.Length];
         Array.Copy(lengthBytes, 0, finalMessage, 0, lengthBytes.Length);
         Array.Copy(mensajeBytes, 0, finalMessage, lengthBytes.Length, mensajeBytes.Length);
 
-        // 🔹 4. Enviar el mensaje completo al cajero
+        // Enviar el mensaje completo al cajero
         await stream.WriteAsync(finalMessage, 0, finalMessage.Length);
         Console.WriteLine($"Enviado: {mensaje}");
 
-        // 🔹 5. Guardar el mensaje enviado en la base de datos con origen false
+        // Guardar el mensaje enviado en la base de datos con origen false
         var mensajeModel = new Mensaje_Model
         {
             mensaje = mensaje,
@@ -178,37 +189,39 @@ public class Sistemas_Comunicacion
         mensajeGuardado.GuardarMensaje();
     }
 
+    // Método para recibir un mensaje del cajero
     public async Task<string> RecibirMensaje(NetworkStream stream, Download? download, Cajero cajero)
     {
-        byte[] buffer = new byte[1024];
+        // BufferSize es 1024 y esta en la clase Control
+        byte[] buffer = new byte[Control.BufferSize];
 
-        // 🔹 Leer los primeros 2 bytes (longitud del mensaje)
+        // Leer los primeros 2 bytes (longitud del mensaje)
         int bytesRead = await LeerTotalAsync(stream, buffer, 2);
         if (bytesRead < 2) throw new Exception("No se recibieron los bytes de longitud completos.");
 
-        // 🔹 Mostrar el array de bytes recibido (longitud)
+        // Mostrar el array de bytes recibido (longitud)
         byte[] receivedBytes = buffer.Take(2).ToArray();
         Console.WriteLine($"Cantidad de Bytes Recibidos (Longitud): {bytesRead}");
         Console.WriteLine($"Array de bytes recibido: [{string.Join(", ", receivedBytes)}]");
 
-        // 🔹 Convertir los 2 bytes a un número (Longitud esperada)
+        // Convertir los 2 bytes a un número (Longitud esperada)
         short originalNumber = BitConverter.ToInt16(receivedBytes, 0);
         Console.WriteLine($"Número original reconstruido (Longitud esperada): {originalNumber}");
 
-        // 🔹 Leer el mensaje completo basado en la longitud recibida
+        // Leer el mensaje completo basado en la longitud recibida
         bytesRead = await LeerTotalAsync(stream, buffer, originalNumber);
         if (bytesRead < originalNumber) throw new Exception("No se recibió el mensaje completo.");
 
-        // 🔹 Mostrar el array de bytes recibido (mensaje completo)
+        // Mostrar el array de bytes recibido (mensaje completo)
         byte[] messageBytes = buffer.Take(bytesRead).ToArray();
         Console.WriteLine($"Cantidad de Bytes Recibidos (Mensaje): {bytesRead}");
         Console.WriteLine($"Array de bytes recibido: [{string.Join(", ", messageBytes)}]");
 
-        // 🔹 Convertir el mensaje a string UTF-8
+        // Convertir el mensaje a string UTF-8
         string mensajeRecibido = Encoding.UTF8.GetString(messageBytes);
         Console.WriteLine($"Mensaje Recibido: {mensajeRecibido}");
 
-        // 🔹 Guardar en la base de datos
+        // Guardar en la base de datos
         var mensajeModel = new Mensaje_Model
         {
             mensaje = mensajeRecibido,
@@ -219,23 +232,16 @@ public class Sistemas_Comunicacion
         var mensaje = new Mensaje(mensajeModel);
         mensaje.GuardarMensaje();
 
-        // Verificar si el download está en progreso y enviar la siguiente línea
-        if (_downloadEnProgreso && download != null)
-        {
-            bool hayMasLineas = await download.EnviarSiguienteLinea(cajero, this, stream);
-            if (!hayMasLineas)
-            {
-                // Guardar evento al finalizar el download
-                Console.WriteLine($"Cajero en Línea: ID = {cajero.Id}, IP = {cajero.Cliente.Client.RemoteEndPoint}");
-                Evento.GuardarEvento(CodigoEvento.Download, "Download terminado", cajero.Id, _servicioId);
-                _downloadEnProgreso = false; // Marcar que el download ha terminado
-            }
-        }
+      
 
         return mensajeRecibido;
+
+       
     }
 
-    // 🔹 Función auxiliar para asegurar que se leen todos los bytes esperados
+   
+
+    // Función auxiliar para asegurar que se leen todos los bytes esperados
     async Task<int> LeerTotalAsync(NetworkStream stream, byte[] buffer, int length)
     {
         int totalRead = 0;
@@ -248,6 +254,7 @@ public class Sistemas_Comunicacion
         return totalRead;
     }
 
+    // Método para cerrar la conexión del servidor
     public void CerrarConexion()
     {
         _isRunning = false;
@@ -255,6 +262,7 @@ public class Sistemas_Comunicacion
         Console.WriteLine("Servidor detenido.");
     }
 
+    // Método para obtener la IP local del servidor
     private string ObtenerIpLocal()
     {
         string localIP = "";
