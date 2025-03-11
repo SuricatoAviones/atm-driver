@@ -21,6 +21,11 @@ namespace atm_driver.Models
 
         public string? password { get; set; }
 
-        public Rol_Model? rol_id { get; set; }
+        // Clave externa
+        public int? rol_id { get; set; }
+
+        // Propiedad de navegación
+        [ForeignKey("rol_id")]
+        public virtual Rol_Model? Rol { get; set; }
     }
 }

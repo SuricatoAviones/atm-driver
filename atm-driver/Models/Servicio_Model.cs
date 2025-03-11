@@ -24,7 +24,7 @@ namespace atm_driver.Models
         public int? tiempo_espera_uno { get; set; }
 
         public int? tiempo_espera_dos {  get; set; }
-
+        
         [Column("tipo_mensaje_id")]
         public Tipo_Mensaje_Model? tipo_mensaje_id { get; set; }
 

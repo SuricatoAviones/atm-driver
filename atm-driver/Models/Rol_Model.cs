@@ -17,5 +17,8 @@ namespace atm_driver.Models
 
         public string? nombre { get; set; }
         public string? descripcion { get; set; }
+
+        // Colección de usuarios con este rol
+        public virtual ICollection<Usuarios_Model> Usuarios { get; set; }
     }
 }
