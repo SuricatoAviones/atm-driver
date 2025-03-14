@@ -201,6 +201,8 @@ public class Sistemas_Comunicacion
 
         // Mostrar el array de bytes recibido (longitud)
         byte[] receivedBytes = buffer.Take(2).ToArray();
+        Array.Reverse(receivedBytes); // Invertimos el array
+
         Console.WriteLine($"Cantidad de Bytes Recibidos (Longitud): {bytesRead}");
         Console.WriteLine($"Array de bytes recibido: [{string.Join(", ", receivedBytes)}]");
 

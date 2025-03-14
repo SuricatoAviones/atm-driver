@@ -108,6 +108,7 @@ namespace atm_driver.Clases
                     // Recibir el mensaje de respuesta del cajero
                     string mensajeRecibido = await sistemasComunicacion.RecibirMensaje(stream, this, cajero);
 
+
                     // Separar el mensaje recibido en un arreglo usando el separador de campo (ASCII 28)
                     string[] elementos = mensajeRecibido.Split((char)28);
 
