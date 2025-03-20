@@ -1,4 +1,7 @@
 ﻿using System.Net.Sockets;
+using System.Text;
+using System.Threading.Tasks;
+using atm_driver.Models;
 
 namespace atm_driver.Clases
 {
@@ -18,10 +21,51 @@ namespace atm_driver.Clases
         // Nueva propiedad para manejar la conexión del cliente
         public TcpClient Cliente { get; set; }
 
+        // Nueva propiedad para la instancia de Sistemas_Comunicacion
+        public Sistemas_Comunicacion SistemasComunicacion { get; set; }
+
+        // Nueva propiedad para el contexto de la base de datos
+        public AppDbContext Context { get; set; }
+
         // Métodos
         public void Inicializar(string type)
         {
             // Implementación del método
+        }
+
+        public async void OnService()
+        {
+            if (SistemasComunicacion == null)
+            {
+                Console.WriteLine("Error: SistemasComunicacion no está inicializado.");
+                return;
+            }
+
+            string mensaje = "1" + (char)28 + (char)28 + (char)28 + "1";
+            await SistemasComunicacion.EnviarMensaje_EsperarRespuesta(mensaje, this, Cliente.GetStream());
+            Console.WriteLine($"Cajero en Línea: ID = {Id}, IP = {Cliente.Client.RemoteEndPoint}");
+
+            // Actualizar el estado del cajero en la base de datos
+            var cajero = await Context.Cajeros.FindAsync(Id);
+            if (cajero != null)
+            {
+                cajero.estado = "En Linea";
+                await Context.SaveChangesAsync();
+                Console.WriteLine($"Estado del cajero {Id} actualizado a 'En Linea' en la base de datos.");
+            }
+        }
+
+        public async void OutService()
+        {
+            if (SistemasComunicacion == null)
+            {
+                Console.WriteLine("Error: SistemasComunicacion no está inicializado.");
+                return;
+            }
+
+            string mensaje = "1" + (char)28 + (char)28 + (char)28 + "1";
+            await SistemasComunicacion.EnviarMensaje_EsperarRespuesta(mensaje, this, Cliente.GetStream());
+            Console.WriteLine($"Cajero en Línea: ID = {Id}, IP = {Cliente.Client.RemoteEndPoint}");
         }
 
         public string VerificarEstado()
@@ -77,3 +121,4 @@ namespace atm_driver.Clases
         }
     }
 }
+

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("atm-driver")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ebee7228a7f551402fb34b0de3016a2da1feb854")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+710ba383d4ba550960615c5deb63a5c64dc939fa")]
 [assembly: System.Reflection.AssemblyProductAttribute("atm-driver")]
 [assembly: System.Reflection.AssemblyTitleAttribute("atm-driver")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

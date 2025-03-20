@@ -9,6 +9,7 @@ public class Sistemas_Comunicacion
 {
     private readonly string _serverIp;
     private readonly int _port;
+    private readonly int _tiempoEsperaUno;
     private TcpListener _server;
     private bool _isRunning;
     private readonly int _servicioId;
@@ -16,7 +17,7 @@ public class Sistemas_Comunicacion
     private bool _downloadEnProgreso; // Nueva propiedad para rastrear el estado del download
 
     // Constructor de la clase Sistemas_Comunicacion
-    public Sistemas_Comunicacion(string serverIp, int port, int servicioId, AppDbContext context)
+    public Sistemas_Comunicacion(string serverIp, int port, int servicioId, AppDbContext context, int tiempoEsperaUno)
     {
         _serverIp = serverIp;
         _port = port;
@@ -24,6 +25,7 @@ public class Sistemas_Comunicacion
         _servicioId = servicioId;
         _context = context;
         _downloadEnProgreso = false; // Inicializar la propiedad
+        _tiempoEsperaUno = tiempoEsperaUno;
     }
 
     // Propiedad para obtener el ID del servicio
@@ -102,7 +104,9 @@ public class Sistemas_Comunicacion
                     Estado = cajeroModel.estado,
                     ClaveComunicacion = keyModel?.clave_comunicacion ?? string.Empty,
                     ClaveMasterKey = keyModel?.clave_masterKey ?? string.Empty,
-                    Cliente = client
+                    Cliente = client,
+                    SistemasComunicacion = this, // Asignar la instancia de Sistemas_Comunicacion
+                    Context = _context // Asignar el contexto de la base de datos
                 };
 
                 // Agregar el cajero a la lista de cajeros conectados
@@ -141,19 +145,42 @@ public class Sistemas_Comunicacion
                 Program.RetirarCajero(cajeroModel.cajero_id);
                 Evento.GuardarEvento(CodigoEvento.Comunicaciones, $"Cajero con IP {cajeroModel.direccion_ip} desconectado inesperadamente.", cajeroModel.cajero_id, _servicioId);
                 Console.WriteLine($"Cajero con IP {cajeroModel.direccion_ip} desconectado inesperadamente.");
+
+                // Actualizar el estado del cajero en la base de datos a "Desconectado"
+                var cajero = await _context.Cajeros.FindAsync(cajeroModel.cajero_id);
+                if (cajero != null)
+                {
+                    cajero.estado = "Desconectado";
+                    await _context.SaveChangesAsync();
+                    Console.WriteLine($"Estado del cajero {cajeroModel.cajero_id} actualizado a 'Desconectado' en la base de datos.");
+                }
             }
         }
     }
 
+
     // Método para enviar un mensaje al cajero y esperar una respuesta
+
     public async Task EnviarMensaje_EsperarRespuesta(string mensaje, Cajero cajero, NetworkStream stream)
     {
         // Enviar el mensaje al cajero
         await EnviarMensaje(mensaje, cajero, stream);
 
-        // Esperar la respuesta del cajero
-        await RecibirMensaje(stream, null, cajero);
+        // Crear un CancellationTokenSource con el tiempo de espera
+        using (var cts = new CancellationTokenSource(_tiempoEsperaUno))
+        {
+            try
+            {
+                // Esperar la respuesta del cajero con el token de cancelación
+                await RecibirMensaje(stream, null, cajero).WaitAsync(cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine("Error: Tiempo de espera agotado para recibir la respuesta del cajero.");
+            }
+        }
     }
+
 
     // Método para enviar un mensaje al cajero
     public async Task EnviarMensaje(string mensaje, Cajero cajero, NetworkStream stream)
@@ -201,6 +228,7 @@ public class Sistemas_Comunicacion
 
         // Mostrar el array de bytes recibido (longitud)
         byte[] receivedBytes = buffer.Take(2).ToArray();
+        Array.Reverse(receivedBytes); // Convertir de Little-Endian a Big-Endian
         Console.WriteLine($"Cantidad de Bytes Recibidos (Longitud): {bytesRead}");
         Console.WriteLine($"Array de bytes recibido: [{string.Join(", ", receivedBytes)}]");
 

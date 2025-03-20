@@ -16,7 +16,7 @@ namespace atm_driver.Clases
         private readonly string? _nombre;
         private readonly string? _descripcion;
         private readonly string? _estado;
-        private readonly int? _tiempoEsperaUno;
+        private readonly int _tiempoEsperaUno;
         private readonly int? _tiempoEsperaDos;
         private readonly Tipo_Mensaje_Model? _tipoMensaje;
         private readonly Sistemas_Comunicacion_Model? _tipoComunicacion;
@@ -45,7 +45,7 @@ namespace atm_driver.Clases
             Console.WriteLine("Inicializando Servicio");
 
             // Clase Sistemas_Comunicacion
-            Sistemas_Comunicacion sistemasComunicacion = new Sistemas_Comunicacion(_serverIp, _port, _servicioId, _context);
+            Sistemas_Comunicacion sistemasComunicacion = new Sistemas_Comunicacion(_serverIp, _port, _servicioId, _context, _tiempoEsperaUno);
             await sistemasComunicacion.Inicializar();
         }
 

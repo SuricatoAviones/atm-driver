@@ -132,8 +132,7 @@ namespace atm_driver.Clases
 
                 if (!downloadDetenidoLocal)
                 {
-                    // Guardar evento al finalizar el download
-                    Console.WriteLine($"Cajero en Línea: ID = {cajero.Id}, IP = {cajero.Cliente.Client.RemoteEndPoint}");
+                    // Guardar evento al finalizar el download      
                     Evento.GuardarEvento(CodigoEvento.Download, "Download NDC terminado", cajero.Id, sistemasComunicacion.ServicioId);
                 }
 
@@ -186,8 +185,7 @@ namespace atm_driver.Clases
 
                 if (!downloadDetenidoLocal)
                 {
-                    // Guardar evento al finalizar el download
-                    Console.WriteLine($"Cajero en Línea: ID = {cajero.Id}, IP = {cajero.Cliente.Client.RemoteEndPoint}");
+                    // Guardar evento al finalizar el download             
                     Evento.GuardarEvento(CodigoEvento.Download, "Download TCS terminado", cajero.Id, sistemasComunicacion.ServicioId);
                 }
 
@@ -210,9 +208,14 @@ namespace atm_driver.Clases
                 downloadDetenido = true;
             }
 
+            if (!downloadDetenido)
+            {
+                // Llamar al método OnService de la clase Cajero
+                cajero.OnService();
+            }
+
             return downloadDetenido;
         }
     }
-
-
 }
+
