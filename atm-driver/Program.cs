@@ -97,7 +97,7 @@ namespace AtmDriver
             Host.CreateDefaultBuilder(args)
                 .ConfigureServices((_, services) =>
                     services.AddDbContext<AppDbContext>(options =>
-                        options.UseSqlServer("Server=LUISGUTIERREZ-P\\SQLEXPRESS2;Database=atm-driver;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True"))
+                        options.UseSqlServer("Server=LAPTOP-BQF70VD3\\SQLEXPRESS;Database=atm-driver;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True"))
                     .AddScoped<Servicio>());
 
         // Método estático para agregar un cajero a la lista
