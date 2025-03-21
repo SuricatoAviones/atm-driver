@@ -267,17 +267,25 @@ public class Sistemas_Comunicacion
        
     }
 
-   
+
 
     // Función auxiliar para asegurar que se leen todos los bytes esperados
     async Task<int> LeerTotalAsync(NetworkStream stream, byte[] buffer, int length)
     {
         int totalRead = 0;
-        while (totalRead < length)
+        try
         {
-            int read = await stream.ReadAsync(buffer, totalRead, length - totalRead);
-            if (read == 0) break; // La conexión se cerró
-            totalRead += read;
+            while (totalRead < length)
+            {
+                int read = await stream.ReadAsync(buffer, totalRead, length - totalRead);
+                if (read == 0) break; // La conexión se cerró
+                totalRead += read;
+            }
+        }
+        catch (IOException ex)
+        {
+            Console.WriteLine($"IOException: {ex.Message}");
+            // Handle the exception as needed
         }
         return totalRead;
     }

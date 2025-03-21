@@ -72,6 +72,23 @@ namespace atm_driver.Clases
             string linea = Lineas[_lineaActual];
             string mensajeFormateado = FormatoCajeroId == 1 ? StringUtils.FormatDownloadNDC(linea) : StringUtils.FormatDownloadTCS(linea);
 
+            // Verificar el sexto carácter del mensaje formateado
+            if (mensajeFormateado.Length >= 6)
+            {
+                char sextoCaracter = mensajeFormateado[5];
+                if (sextoCaracter == 'A')
+                {
+                    // Insertar el código del cajero en el octavo carácter
+                    mensajeFormateado = mensajeFormateado.Insert(7, cajero.Codigo.ToString());
+                }
+                else if (sextoCaracter == 'C')
+                {
+                    // Insertar la fecha y hora actual en el octavo carácter
+                    string fechaHoraActual = DateTime.Now.ToString("yyyyMMddHHmmss");
+                    mensajeFormateado = mensajeFormateado.Insert(7, fechaHoraActual);
+                }
+            }
+
             // Enviar mensaje al cajero y esperar respuesta
             await sistemasComunicacion.EnviarMensaje(mensajeFormateado, cajero, stream);
 
@@ -79,6 +96,7 @@ namespace atm_driver.Clases
 
             return true; // Aún hay más líneas para enviar
         }
+
 
         public async Task<bool> EnvioDownload(Cajero cajero, Sistemas_Comunicacion sistemasComunicacion, NetworkStream stream)
         {
