@@ -9,6 +9,7 @@ public class Sistemas_Comunicacion
 {
     private readonly string _serverIp;
     private readonly int _port;
+    private readonly int _controlPort; // Puerto del control
     private readonly int _tiempoEsperaUno;
     private TcpListener _server;
     private bool _isRunning;
@@ -17,10 +18,11 @@ public class Sistemas_Comunicacion
     private bool _downloadEnProgreso; // Nueva propiedad para rastrear el estado del download
 
     // Constructor de la clase Sistemas_Comunicacion
-    public Sistemas_Comunicacion(string serverIp, int port, int servicioId, AppDbContext context, int tiempoEsperaUno)
+    public Sistemas_Comunicacion(string serverIp, int port, int controlPort, int servicioId, AppDbContext context, int tiempoEsperaUno)
     {
         _serverIp = serverIp;
         _port = port;
+        _controlPort = controlPort;
         _server = new TcpListener(IPAddress.Any, port);
         _servicioId = servicioId;
         _context = context;
@@ -36,7 +38,7 @@ public class Sistemas_Comunicacion
     {
         Console.WriteLine("Servidor iniciando...");
         _isRunning = true;
-        await EjecutarServidorAsync();
+        await Task.WhenAll(EjecutarServidorAsync(), ControlServer.GetInstance(_controlPort, _context, _servicioId).Inicializar());
     }
 
     // Método privado para ejecutar el servidor de manera asíncrona
@@ -75,6 +77,12 @@ public class Sistemas_Comunicacion
             {
                 IPEndPoint remoteEndPoint = client.Client.RemoteEndPoint as IPEndPoint;
                 string clientIp = remoteEndPoint?.Address.ToString();
+                if (string.IsNullOrEmpty(clientIp))
+                {
+                    Console.WriteLine("Error: La IP del cliente es nula o vacía. Cerrando conexión.");
+                    client.Close();
+                    return;
+                }
                 Console.WriteLine($"Cliente conectado desde la IP: {clientIp}");
 
                 // Verificar si la IP del cliente está registrada
@@ -96,7 +104,7 @@ public class Sistemas_Comunicacion
                 Cajero cajero = new Cajero
                 {
                     Id = cajeroModel.cajero_id,
-                    Codigo = int.TryParse(cajeroModel.codigo, out int codigo) ? codigo : 0,
+                    Codigo = cajeroModel.codigo,
                     Nombre = cajeroModel.nombre,
                     Marca = cajeroModel.marca,
                     Modelo = cajeroModel.modelo,
@@ -120,9 +128,9 @@ public class Sistemas_Comunicacion
                 if (!downloadDetenido)
                 {
                     // Guardar evento al finalizar el download
-                    Console.WriteLine($"Cajero en Línea: ID = {cajero.Id}, IP = {clientIp}");
                     Evento.GuardarEvento(CodigoEvento.Download, "Download terminado", cajeroModel.cajero_id, _servicioId);
                     _downloadEnProgreso = false; // Marcar que el download ha terminado
+                    cajero.OnService();
                 }
 
                 // Continuar recibiendo mensajes del cajero
@@ -158,14 +166,12 @@ public class Sistemas_Comunicacion
         }
     }
 
-
     // Método para enviar un mensaje al cajero y esperar una respuesta
-
     public async Task EnviarMensaje_EsperarRespuesta(string mensaje, Cajero cajero, NetworkStream stream)
     {
         // Enviar el mensaje al cajero
         await EnviarMensaje(mensaje, cajero, stream);
-
+      
         // Crear un CancellationTokenSource con el tiempo de espera
         using (var cts = new CancellationTokenSource(_tiempoEsperaUno))
         {
@@ -180,7 +186,6 @@ public class Sistemas_Comunicacion
             }
         }
     }
-
 
     // Método para enviar un mensaje al cajero
     public async Task EnviarMensaje(string mensaje, Cajero cajero, NetworkStream stream)
@@ -222,52 +227,70 @@ public class Sistemas_Comunicacion
         // BufferSize es 1024 y esta en la clase Control
         byte[] buffer = new byte[Control.BufferSize];
 
-        // Leer los primeros 2 bytes (longitud del mensaje)
-        int bytesRead = await LeerTotalAsync(stream, buffer, 2);
-        if (bytesRead < 2) throw new Exception("No se recibieron los bytes de longitud completos.");
-
-        // Mostrar el array de bytes recibido (longitud)
-        byte[] receivedBytes = buffer.Take(2).ToArray();
-        Array.Reverse(receivedBytes); // Convertir de Little-Endian a Big-Endian
-        Console.WriteLine($"Cantidad de Bytes Recibidos (Longitud): {bytesRead}");
-        Console.WriteLine($"Array de bytes recibido: [{string.Join(", ", receivedBytes)}]");
-
-        // Convertir los 2 bytes a un número (Longitud esperada)
-        short originalNumber = BitConverter.ToInt16(receivedBytes, 0);
-        Console.WriteLine($"Número original reconstruido (Longitud esperada): {originalNumber}");
-
-        // Leer el mensaje completo basado en la longitud recibida
-        bytesRead = await LeerTotalAsync(stream, buffer, originalNumber);
-        if (bytesRead < originalNumber) throw new Exception("No se recibió el mensaje completo.");
-
-        // Mostrar el array de bytes recibido (mensaje completo)
-        byte[] messageBytes = buffer.Take(bytesRead).ToArray();
-        Console.WriteLine($"Cantidad de Bytes Recibidos (Mensaje): {bytesRead}");
-        Console.WriteLine($"Array de bytes recibido: [{string.Join(", ", messageBytes)}]");
-
-        // Convertir el mensaje a string UTF-8
-        string mensajeRecibido = Encoding.UTF8.GetString(messageBytes);
-        Console.WriteLine($"Mensaje Recibido: {mensajeRecibido}");
-
-        // Guardar en la base de datos
-        var mensajeModel = new Mensaje_Model
+        try
         {
-            mensaje = mensajeRecibido,
-            origen = true, // Asumiendo que el origen es siempre true
-            hora_entrada = DateTime.Now,
-            servicio_id = _servicioId
-        };
-        var mensaje = new Mensaje(mensajeModel);
-        mensaje.GuardarMensaje();
+            // Leer los primeros 2 bytes (longitud del mensaje)
+            int bytesRead = await LeerTotalAsync(stream, buffer, 2);
+            if (bytesRead < 2)
+            {
+                Console.WriteLine("No se recibieron los bytes de longitud completos.");
+                return string.Empty;
+            }
 
-      
+            // Mostrar el array de bytes recibido (longitud)
+            byte[] receivedBytes = buffer.Take(2).ToArray();
+            Array.Reverse(receivedBytes); // Convertir de Little-Endian a Big-Endian
+            Console.WriteLine($"Cantidad de Bytes Recibidos (Longitud): {bytesRead}");
+            Console.WriteLine($"Array de bytes recibido: [{string.Join(", ", receivedBytes)}]");
 
-        return mensajeRecibido;
+            // Convertir los 2 bytes a un número (Longitud esperada)
+            short originalNumber = BitConverter.ToInt16(receivedBytes, 0);
+            Console.WriteLine($"Número original reconstruido (Longitud esperada): {originalNumber}");
 
-       
+            // Leer el mensaje completo basado en la longitud recibida
+            try
+            {
+                bytesRead = await LeerTotalAsync(stream, buffer, originalNumber);
+                if (bytesRead < originalNumber)
+                {
+                    Console.WriteLine($"Error al leer el mensaje completo. Se esperaban {originalNumber} bytes, pero se recibieron {bytesRead} bytes.");
+                    return string.Empty;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al leer el mensaje completo. Se esperaban {originalNumber} bytes, pero se recibieron {bytesRead} bytes. Detalles: {ex.Message}");
+                return string.Empty;
+            }
+
+            // Mostrar el array de bytes recibido (mensaje completo)
+            byte[] messageBytes = buffer.Take(bytesRead).ToArray();
+            Console.WriteLine($"Cantidad de Bytes Recibidos (Mensaje): {bytesRead}");
+            Console.WriteLine($"Array de bytes recibido: [{string.Join(", ", messageBytes)}]");
+
+            // Convertir el mensaje a string UTF-8
+            string mensajeRecibido = Encoding.UTF8.GetString(messageBytes);
+            Console.WriteLine($"Mensaje Recibido: {mensajeRecibido}");
+
+            // Guardar en la base de datos
+            var mensajeModel = new Mensaje_Model
+            {
+                mensaje = mensajeRecibido,
+                origen = true, // Asumiendo que el origen es siempre true
+                hora_entrada = DateTime.Now,
+                servicio_id = _servicioId
+            };
+            var mensaje = new Mensaje(mensajeModel);
+            mensaje.GuardarMensaje();
+
+            return mensajeRecibido;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error recibiendo mensaje: {ex.Message}");
+            return string.Empty;
+        }
     }
-
-
 
     // Función auxiliar para asegurar que se leen todos los bytes esperados
     async Task<int> LeerTotalAsync(NetworkStream stream, byte[] buffer, int length)
@@ -288,14 +311,6 @@ public class Sistemas_Comunicacion
             // Handle the exception as needed
         }
         return totalRead;
-    }
-
-    // Método para cerrar la conexión del servidor
-    public void CerrarConexion()
-    {
-        _isRunning = false;
-        _server.Stop();
-        Console.WriteLine("Servidor detenido.");
     }
 
     // Método para obtener la IP local del servidor

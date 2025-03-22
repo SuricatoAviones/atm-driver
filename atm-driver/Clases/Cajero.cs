@@ -1,6 +1,7 @@
 ﻿using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using atm_driver.Data;
 using atm_driver.Models;
 
 namespace atm_driver.Clases
@@ -42,18 +43,57 @@ namespace atm_driver.Clases
             }
 
             string mensaje = "1" + (char)28 + (char)28 + (char)28 + "1";
+             
             await SistemasComunicacion.EnviarMensaje_EsperarRespuesta(mensaje, this, Cliente.GetStream());
-            Console.WriteLine($"Cajero en Línea: ID = {Id}, IP = {Cliente.Client.RemoteEndPoint}");
 
-            // Actualizar el estado del cajero en la base de datos
-            var cajero = await Context.Cajeros.FindAsync(Id);
-            if (cajero != null)
+            // Recibir el mensaje de respuesta del cajero
+            string mensajeRecibido = await SistemasComunicacion.RecibirMensaje(Cliente.GetStream(), null, this);
+
+            // Separar el mensaje recibido en un arreglo usando el separador de campo (ASCII 28)
+            string[] elementos = mensajeRecibido.Split((char)28);
+
+            // Verificar si alguno de los elementos contiene un comando ilegal
+            bool comandoIlegalEncontrado = false;
+            foreach (var elemento in elementos)
             {
-                cajero.estado = "En Linea";
-                await Context.SaveChangesAsync();
-                Console.WriteLine($"Estado del cajero {Id} actualizado a 'En Linea' en la base de datos.");
+                if (DiccionarioData.IllegalCommands.ContainsKey(elemento))
+                {
+                    string observacion = DiccionarioData.IllegalCommands[elemento];
+                    Evento.GuardarEvento(CodigoEvento.Comunicaciones, observacion, Id, SistemasComunicacion.ServicioId);
+                    Console.WriteLine($"Cajero fuera de línea: {observacion}");
+                    comandoIlegalEncontrado = true;
+                    break; // Detener el procesamiento
+                }
+            }
+
+            if (comandoIlegalEncontrado)
+            {
+                // Actualizar el estado del cajero en la base de datos a "Fuera de Línea"
+                var cajero = await Context.Cajeros.FindAsync(Id);
+                if (cajero != null)
+                {
+                    cajero.estado = "Fuera de Línea";
+                    await Context.SaveChangesAsync();
+                    Console.WriteLine($"Estado del cajero {Id} actualizado a 'Fuera de Línea' en la base de datos.");
+                }
+            }
+            else
+            {
+                // Actualizar el estado del cajero en la base de datos a "En Línea"
+                var cajero = await Context.Cajeros.FindAsync(Id);
+                if (cajero != null)
+                {
+                    cajero.estado = "En Línea";
+                    await Context.SaveChangesAsync();
+                    Console.WriteLine($"Estado del cajero {Id} actualizado a 'En Línea' en la base de datos.");
+                }
+
+                // Mostrar mensaje de cajero en línea solo si no se recibió un comando ilegal
+                Console.WriteLine($"Cajero en Línea: ID = {Id}, IP = {Cliente.Client.RemoteEndPoint}");
             }
         }
+
+
 
         public async void OutService()
         {

@@ -1,42 +1,26 @@
 ﻿using atm_driver.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace atm_driver.Clases
 {
     internal class Servicio
     {
-        private readonly string _serverIp;
-        private readonly int _port;
-        private readonly string? _codigo;
-        private readonly string? _nombre;
-        private readonly string? _descripcion;
-        private readonly string? _estado;
-        private readonly int _tiempoEsperaUno;
-        private readonly int? _tiempoEsperaDos;
-        private readonly Tipo_Mensaje_Model? _tipoMensaje;
-        private readonly Sistemas_Comunicacion_Model? _tipoComunicacion;
-        private readonly int _servicioId;
+        public string ServerIp { get; private set; }
+        public int Port { get; private set; }
+        public int TiempoEsperaUno { get; private set; }
+        public int ServicioId { get; private set; }
         private readonly AppDbContext _context;
 
         // Constructor para inicializar desde base de datos
         public Servicio(Servicio_Model servicioModel, AppDbContext context)
         {
-            _serverIp = servicioModel.sistema_comunicacion_id?.direccion_ip ?? throw new ArgumentNullException(nameof(servicioModel.sistema_comunicacion_id.direccion_ip));
-            _port = int.TryParse(servicioModel.sistema_comunicacion_id?.puerto_tcp, out var port) ? port : throw new ArgumentNullException(nameof(servicioModel.sistema_comunicacion_id.puerto_tcp));
-            _codigo = servicioModel.codigo;
-            _nombre = servicioModel.nombre;
-            _descripcion = servicioModel.descripcion;
-            _estado = servicioModel.estado;
-            _tiempoEsperaUno = servicioModel.tiempo_espera_uno ?? 10000; // Valor por defecto si es null
-            _tiempoEsperaDos = servicioModel.tiempo_espera_dos ?? 10000; // Valor por defecto si es null
-            _tipoMensaje = servicioModel.tipo_mensaje_id;
-            _tipoComunicacion = servicioModel.sistema_comunicacion_id;
-            _servicioId = servicioModel.servicio_id;
+            ServerIp = servicioModel.sistema_comunicacion_id?.direccion_ip ?? throw new ArgumentNullException(nameof(servicioModel.sistema_comunicacion_id.direccion_ip));
+            Port = int.TryParse(servicioModel.sistema_comunicacion_id?.puerto_tcp, out var port) ? port : throw new ArgumentNullException(nameof(servicioModel.sistema_comunicacion_id.puerto_tcp));
+            TiempoEsperaUno = servicioModel.tiempo_espera_uno ?? 10000; // Valor por defecto si es null
+            ServicioId = servicioModel.servicio_id;
             _context = context;
         }
 
@@ -45,7 +29,7 @@ namespace atm_driver.Clases
             Console.WriteLine("Inicializando Servicio");
 
             // Clase Sistemas_Comunicacion
-            Sistemas_Comunicacion sistemasComunicacion = new Sistemas_Comunicacion(_serverIp, _port, _servicioId, _context, _tiempoEsperaUno);
+            Sistemas_Comunicacion sistemasComunicacion = new Sistemas_Comunicacion(ServerIp, Port, 5001, ServicioId, _context, TiempoEsperaUno);
             await sistemasComunicacion.Inicializar();
         }
 
@@ -65,7 +49,6 @@ namespace atm_driver.Clases
             {
                 var servicioModel = context.Servicios
                     .Include(s => s.sistema_comunicacion_id)
-                    .Include(s => s.tipo_mensaje_id)
                     .FirstOrDefault(s => s.servicio_id == servicioId);
 
                 if (servicioModel == null)
@@ -82,7 +65,7 @@ namespace atm_driver.Clases
             }
         }
 
-        // Modificar método para devolver el objeto Cajeros_Model si la IP está en la base de datos
+        // Método para verificar si la IP del cajero está registrada en la base de datos
         public static Cajeros_Model? VerificarIpCajero(string ip, AppDbContext context)
         {
             try

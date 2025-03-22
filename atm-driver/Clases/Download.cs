@@ -227,11 +227,7 @@ namespace atm_driver.Clases
                 downloadDetenido = true;
             }
 
-            if (!downloadDetenido)
-            {
-                // Llamar al método OnService de la clase Cajero
-                cajero.OnService();
-            }
+         
 
             return downloadDetenido;
         }
