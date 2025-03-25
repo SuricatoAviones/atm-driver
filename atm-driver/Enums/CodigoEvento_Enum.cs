@@ -7,6 +7,6 @@
         BaseDeDatos = 3,
         ServidorCliente = 4,
         Download = 5
-        // Añadir más códigos de eventos según sea necesario
+    
     }
 }

@@ -66,6 +66,7 @@ public class Sistemas_Comunicacion
         }
     }
 
+
     // Método para manejar la conexión de un cliente de manera asíncrona
     public async Task HandleClientAsync(TcpClient client)
     {
@@ -120,6 +121,14 @@ public class Sistemas_Comunicacion
                 // Agregar el cajero a la lista de cajeros conectados
                 Program.AgregarCajero(cajeroModel);
                 Evento.GuardarEvento(CodigoEvento.Comunicaciones, $"Cajero con IP {clientIp} conectado.", cajeroModel.cajero_id, _servicioId);
+                // Actualizar el estado del cajero en la base de datos a "Fuera de Servicio"
+                var cajeroDb = await _context.Cajeros.FindAsync(cajeroModel.cajero_id);
+                if (cajeroDb != null)
+                {
+                    cajeroDb.estado = "Fuera de Servicio";
+                    await _context.SaveChangesAsync();
+                    Console.WriteLine($"Estado del cajero {cajeroModel.cajero_id} actualizado a 'Fuera de Servicio' en la base de datos.");
+                }
 
                 // Iniciar el proceso de descarga
                 _downloadEnProgreso = true; // Marcar que el download está en progreso
@@ -130,13 +139,40 @@ public class Sistemas_Comunicacion
                     // Guardar evento al finalizar el download
                     Evento.GuardarEvento(CodigoEvento.Download, "Download terminado", cajeroModel.cajero_id, _servicioId);
                     _downloadEnProgreso = false; // Marcar que el download ha terminado
-                    cajero.OnService();
-                }
+                    cajero.OutService();
 
-                // Continuar recibiendo mensajes del cajero
-                while (true)
-                {
-                    await RecibirMensaje(stream, download, cajero);
+                    // Enviar mensaje al cajero
+                    /*string mensaje = "1" + (char)28 + (char)28 + (char)28 + "1";
+                    await EnviarMensaje_EsperarRespuesta(mensaje, cajero, stream);
+
+                    // Actualizar el estado del cajero en la base de datos a "En Línea"
+                    var cajeroD= await _context.Cajeros.FindAsync(cajeroModel.cajero_id);
+                    if (cajeroDb != null)
+                    {
+                        cajeroDb.estado = "En Línea";
+                        await _context.SaveChangesAsync();
+                        Console.WriteLine($"Estado del cajero {cajeroModel.cajero_id} actualizado a 'En Línea' en la base de datos.");
+                    }
+
+                    // Mostrar mensaje de cajero en línea
+                    Console.WriteLine($"Cajero en Línea: ID = {cajeroModel.cajero_id}, IP = {cajero.Cliente.Client.RemoteEndPoint}");*/
+
+                    // Continuar recibiendo mensajes del cajero
+                    while (client.Connected)
+                    {
+                        string mensajeRecibido = await RecibirMensaje(stream, download, cajero);
+
+                        // Si el mensaje recibido está vacío o tiene errores, cerrar conexión
+                        if (string.IsNullOrEmpty(mensajeRecibido))
+                        {
+                            Console.WriteLine("Se recibió un mensaje vacío o inválido. Cerrando conexión con el cajero.");
+                            break;
+                        }
+
+                        cajero.ProcesarMensaje(mensajeRecibido, cajero);
+
+                        Console.WriteLine($"Mensaje recibido correctamente: {mensajeRecibido}");
+                    }
                 }
             }
         }
@@ -233,6 +269,11 @@ public class Sistemas_Comunicacion
             int bytesRead = await LeerTotalAsync(stream, buffer, 2);
             if (bytesRead < 2)
             {
+                if (bytesRead == 0)
+                {
+                    Console.WriteLine("El cliente se ha desconectado.");
+                    return string.Empty;
+                }
                 Console.WriteLine("No se recibieron los bytes de longitud completos.");
                 return string.Empty;
             }
@@ -248,18 +289,15 @@ public class Sistemas_Comunicacion
             Console.WriteLine($"Número original reconstruido (Longitud esperada): {originalNumber}");
 
             // Leer el mensaje completo basado en la longitud recibida
-            try
+            bytesRead = await LeerTotalAsync(stream, buffer, originalNumber);
+            if (bytesRead < originalNumber)
             {
-                bytesRead = await LeerTotalAsync(stream, buffer, originalNumber);
-                if (bytesRead < originalNumber)
+                if (bytesRead == 0)
                 {
-                    Console.WriteLine($"Error al leer el mensaje completo. Se esperaban {originalNumber} bytes, pero se recibieron {bytesRead} bytes.");
+                    Console.WriteLine("El cliente se ha desconectado.");
                     return string.Empty;
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error al leer el mensaje completo. Se esperaban {originalNumber} bytes, pero se recibieron {bytesRead} bytes. Detalles: {ex.Message}");
+                Console.WriteLine($"Error al leer el mensaje completo. Se esperaban {originalNumber} bytes, pero se recibieron {bytesRead} bytes.");
                 return string.Empty;
             }
 
@@ -291,6 +329,7 @@ public class Sistemas_Comunicacion
             return string.Empty;
         }
     }
+
 
     // Función auxiliar para asegurar que se leen todos los bytes esperados
     async Task<int> LeerTotalAsync(NetworkStream stream, byte[] buffer, int length)

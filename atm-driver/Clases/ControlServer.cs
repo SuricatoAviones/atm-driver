@@ -13,6 +13,7 @@ public class ControlServer
     private readonly int _controlPort;
     private readonly AppDbContext _context;
     private readonly int _servicioId;
+    private readonly char FieldSeparator = (char)28; // ASCII 28
 
     private ControlServer(int controlPort, AppDbContext context, int servicioId)
     {
@@ -67,7 +68,7 @@ public class ControlServer
         }
     }
 
-    public async Task HandleControlClientAsync(TcpClient client)
+    private async Task HandleControlClientAsync(TcpClient client)
     {
         try
         {
@@ -76,12 +77,14 @@ public class ControlServer
             {
                 Console.WriteLine("Panel de control conectado.");
 
-                // Enviar la lista de cajeros conectados al panel de control
-                var cajerosConectados = Program.ObtenerCajerosConectados();
-                string mensaje = string.Join(",", cajerosConectados.Select(c => c.direccion_ip));
-                byte[] mensajeBytes = Encoding.UTF8.GetBytes(mensaje);
-                await stream.WriteAsync(mensajeBytes, 0, mensajeBytes.Length);
-                Console.WriteLine("Lista de cajeros conectados enviada al panel de control.");
+                byte[] buffer = new byte[1024];
+                int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+                if (bytesRead > 0)
+                {
+                    string mensaje = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    Console.WriteLine($"Mensaje recibido: {mensaje}");
+                    ProcesarMensaje(mensaje);
+                }
             }
         }
         catch (Exception ex)
@@ -91,11 +94,85 @@ public class ControlServer
         }
     }
 
+    public void EnviarMensaje(string mensaje)
+    {
+        try
+        {
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al enviar mensaje: {ex.Message}");
+            Evento.GuardarEvento(CodigoEvento.ServidorCliente, $"Error al enviar mensaje: {ex.Message}", null, _servicioId);
+        }
+    }
+
+    public void RecibirMensaje(string mensaje)
+    {
+        try
+        {
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al recibir mensaje: {ex.Message}");
+            Evento.GuardarEvento(CodigoEvento.ServidorCliente, $"Error al recibir mensaje: {ex.Message}", null, _servicioId);
+        }
+    }
+
+    public void ProcesarMensaje(string mensaje)
+    {
+        try
+        {
+            string[] partes = mensaje.Split(FieldSeparator);
+            if (partes.Length < 2) return;
+
+            string codigoCajero = partes[0];
+            string codigoComando = partes[1];
+            Console.WriteLine($"Procesando comando {codigoComando} para cajero {codigoCajero}");
+
+            switch (codigoComando)
+            {
+                case "01":
+                    EnviarCajerosConectados();
+                    break;
+                case "02":
+                    FueraDeServicio();
+                    break;
+                case "03":
+                    EnviarContadores();
+                    break;
+                default:
+                    Console.WriteLine("Comando desconocido");
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al procesar mensaje: {ex.Message}");
+            Evento.GuardarEvento(CodigoEvento.ServidorCliente, $"Error al procesar mensaje: {ex.Message}", null, _servicioId);
+        }
+    }
+
     public void CerrarConexion()
     {
         _isRunning = false;
         _controlServer.Stop();
         Console.WriteLine("Servidor de control detenido.");
+    }
+
+    public void EnviarCajerosConectados()
+    {
+    }
+
+    public void EnviarContadores()
+    {
+    }
+
+    public void FueraDeServicio()
+    {
+    }
+
+    public void FueraDeLinea()
+    {
     }
 
     private string ObtenerIpLocal()
