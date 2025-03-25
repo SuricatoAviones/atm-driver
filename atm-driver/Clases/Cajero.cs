@@ -6,7 +6,7 @@ using atm_driver.Data;
 using atm_driver.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
-
+using atm_driver.Clases;
 namespace atm_driver.Clases
 {
     public class Cajero

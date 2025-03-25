@@ -3,6 +3,8 @@ using AtmDriver;
 using System.Net.Sockets;
 using System.Net;
 using System.Text;
+using System.Collections.Generic;
+using atm_driver.Models;
 
 public class ControlServer
 {
@@ -94,18 +96,6 @@ public class ControlServer
         }
     }
 
-    public void RecibirMensaje(string mensaje)
-    {
-        try
-        {
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error al recibir mensaje: {ex.Message}");
-            Evento.GuardarEvento(CodigoEvento.ServidorCliente, $"Error al recibir mensaje: {ex.Message}", null, _servicioId);
-        }
-    }
-
     public void ProcesarMensaje(string mensaje, NetworkStream stream)
     {
         try
@@ -131,7 +121,7 @@ public class ControlServer
             }
 
             // Verificar si el cajero está en la lista de cajeros conectados
-            var cajeroConectado = Program.ObtenerCajerosConectados().FirstOrDefault(c => c.codigo == codigoCajero);
+            var cajeroConectado = Program.ObtenerCajerosConectados().FirstOrDefault(c => c.Codigo == codigoCajero);
             if (cajeroConectado == null)
             {
                 Console.WriteLine($"Cajero con código {codigoCajero} no está conectado.");
@@ -146,7 +136,7 @@ public class ControlServer
             switch (codigoComando)
             {
                 case "01":
-                    ColocarEnLinea();
+                    ColocarEnLinea(cajeroConectado);
                     break;
                 case "02":
                     FueraDeServicio();
@@ -186,11 +176,7 @@ public class ControlServer
         }
     }
 
-    public void ColocarEnLinea()
-    {
-    }
-
-    /*public void ColocarEnLinea(Cajero cajero)
+    public void ColocarEnLinea(Cajero cajero)
     {
         if (cajero != null)
         {
@@ -201,7 +187,7 @@ public class ControlServer
         {
             Console.WriteLine($"Cajero no está conectado.");
         }
-    }*/
+    }
 
     public void EnviarContadores()
     {

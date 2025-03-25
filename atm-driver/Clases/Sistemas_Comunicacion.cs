@@ -139,23 +139,8 @@ public class Sistemas_Comunicacion
                     // Guardar evento al finalizar el download
                     Evento.GuardarEvento(CodigoEvento.Download, "Download terminado", cajeroModel.cajero_id, _servicioId);
                     _downloadEnProgreso = false; // Marcar que el download ha terminado
-                    cajero.OutService();
+                    cajero.OnService();
 
-                    // Enviar mensaje al cajero
-                    /*string mensaje = "1" + (char)28 + (char)28 + (char)28 + "1";
-                    await EnviarMensaje_EsperarRespuesta(mensaje, cajero, stream);
-
-                    // Actualizar el estado del cajero en la base de datos a "En Línea"
-                    var cajeroD= await _context.Cajeros.FindAsync(cajeroModel.cajero_id);
-                    if (cajeroDb != null)
-                    {
-                        cajeroDb.estado = "En Línea";
-                        await _context.SaveChangesAsync();
-                        Console.WriteLine($"Estado del cajero {cajeroModel.cajero_id} actualizado a 'En Línea' en la base de datos.");
-                    }
-
-                    // Mostrar mensaje de cajero en línea
-                    Console.WriteLine($"Cajero en Línea: ID = {cajeroModel.cajero_id}, IP = {cajero.Cliente.Client.RemoteEndPoint}");*/
 
                     // Continuar recibiendo mensajes del cajero
                     while (client.Connected)

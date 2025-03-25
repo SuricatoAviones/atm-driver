@@ -13,7 +13,7 @@ namespace AtmDriver
     class Program
     {
         // Lista estática para almacenar objetos de cajeros
-        private static List<Cajeros_Model> _cajerosConectados = new List<Cajeros_Model>();
+        public static List<Cajeros_Model> _cajerosConectados = new List<Cajeros_Model>();
 
         static async Task Main(string[] args)
         {
