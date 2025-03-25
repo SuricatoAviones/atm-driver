@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\luisa\\OneDrive\\Desktop\\apps in c# 23 -03-2025\\atm-driver\\atm-driver\\atm-driver.csproj": {}
+    "C:\\Users\\Luis Angel\\Desktop\\apps in c#\\24-03\\atm-driver\\atm-driver\\atm-driver.csproj": {}
   },
   "projects": {
-    "C:\\Users\\luisa\\OneDrive\\Desktop\\apps in c# 23 -03-2025\\atm-driver\\atm-driver\\atm-driver.csproj": {
+    "C:\\Users\\Luis Angel\\Desktop\\apps in c#\\24-03\\atm-driver\\atm-driver\\atm-driver.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\luisa\\OneDrive\\Desktop\\apps in c# 23 -03-2025\\atm-driver\\atm-driver\\atm-driver.csproj",
+        "projectUniqueName": "C:\\Users\\Luis Angel\\Desktop\\apps in c#\\24-03\\atm-driver\\atm-driver\\atm-driver.csproj",
         "projectName": "atm-driver",
-        "projectPath": "C:\\Users\\luisa\\OneDrive\\Desktop\\apps in c# 23 -03-2025\\atm-driver\\atm-driver\\atm-driver.csproj",
-        "packagesPath": "C:\\Users\\luisa\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\luisa\\OneDrive\\Desktop\\apps in c# 23 -03-2025\\atm-driver\\atm-driver\\obj\\",
+        "projectPath": "C:\\Users\\Luis Angel\\Desktop\\apps in c#\\24-03\\atm-driver\\atm-driver\\atm-driver.csproj",
+        "packagesPath": "C:\\Users\\Luis Angel\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Luis Angel\\Desktop\\apps in c#\\24-03\\atm-driver\\atm-driver\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\luisa\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Luis Angel\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -92,7 +92,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.102/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.104/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

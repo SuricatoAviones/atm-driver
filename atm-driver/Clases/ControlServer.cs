@@ -83,7 +83,7 @@ public class ControlServer
                 {
                     string mensaje = Encoding.UTF8.GetString(buffer, 0, bytesRead);
                     Console.WriteLine($"Mensaje recibido: {mensaje}");
-                    ProcesarMensaje(mensaje);
+                    ProcesarMensaje(mensaje, stream);
                 }
             }
         }
@@ -91,18 +91,6 @@ public class ControlServer
         {
             Console.WriteLine($"Error manejando cliente de control: {ex.Message}");
             Evento.GuardarEvento(CodigoEvento.ServidorCliente, $"Error manejando cliente de control: {ex.Message}", null, _servicioId);
-        }
-    }
-
-    public void EnviarMensaje(string mensaje)
-    {
-        try
-        {
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error al enviar mensaje: {ex.Message}");
-            Evento.GuardarEvento(CodigoEvento.ServidorCliente, $"Error al enviar mensaje: {ex.Message}", null, _servicioId);
         }
     }
 
@@ -118,7 +106,7 @@ public class ControlServer
         }
     }
 
-    public void ProcesarMensaje(string mensaje)
+    public void ProcesarMensaje(string mensaje, NetworkStream stream)
     {
         try
         {
@@ -129,10 +117,36 @@ public class ControlServer
             string codigoComando = partes[1];
             Console.WriteLine($"Procesando comando {codigoComando} para cajero {codigoCajero}");
 
+            // Verificar si el codigoCajero existe en la base de datos
+            var cajeroModel = _context.Cajeros.FirstOrDefault(c => c.codigo == codigoCajero);
+            if (cajeroModel == null)
+            {
+                Console.WriteLine($"Cajero con código {codigoCajero} no encontrado en la base de datos.");
+                Evento.GuardarEvento(CodigoEvento.ServidorCliente, $"Cajero con código {codigoCajero} no encontrado en la base de datos.", null, _servicioId);
+
+                // Enviar mensaje de error al panel de control
+                string mensajeError = $"{FieldSeparator}03";
+                EnviarMensaje(mensajeError, stream);
+                return;
+            }
+
+            // Verificar si el cajero está en la lista de cajeros conectados
+            var cajeroConectado = Program.ObtenerCajerosConectados().FirstOrDefault(c => c.codigo == codigoCajero);
+            if (cajeroConectado == null)
+            {
+                Console.WriteLine($"Cajero con código {codigoCajero} no está conectado.");
+                Evento.GuardarEvento(CodigoEvento.ServidorCliente, $"Cajero con código {codigoCajero} no está conectado.", null, _servicioId);
+
+                // Enviar mensaje de error al panel de control
+                string mensajeError = $"{FieldSeparator}04";
+                EnviarMensaje(mensajeError, stream);
+                return;
+            }
+
             switch (codigoComando)
             {
                 case "01":
-                    EnviarCajerosConectados();
+                    ColocarEnLinea();
                     break;
                 case "02":
                     FueraDeServicio();
@@ -152,16 +166,42 @@ public class ControlServer
         }
     }
 
-    public void CerrarConexion()
+    public void EnviarMensaje(string mensaje, NetworkStream stream)
     {
-        _isRunning = false;
-        _controlServer.Stop();
-        Console.WriteLine("Servidor de control detenido.");
+        try
+        {
+            byte[] mensajeBytes = Encoding.UTF8.GetBytes(mensaje);
+            stream.Write(mensajeBytes, 0, mensajeBytes.Length);
+            Console.WriteLine($"Mensaje enviado: {mensaje}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al enviar mensaje: {ex.Message}");
+            Evento.GuardarEvento(CodigoEvento.ServidorCliente, $"Error al enviar mensaje: {ex.Message}", null, _servicioId);
+        }
+        finally
+        {
+            // Cerrar la conexión después de enviar el mensaje
+            stream.Close();
+        }
     }
 
-    public void EnviarCajerosConectados()
+    public void ColocarEnLinea()
     {
     }
+
+    /*public void ColocarEnLinea(Cajero cajero)
+    {
+        if (cajero != null)
+        {
+            // Llamar al método OnService del cajero
+            cajero.OnService();
+        }
+        else
+        {
+            Console.WriteLine($"Cajero no está conectado.");
+        }
+    }*/
 
     public void EnviarContadores()
     {
