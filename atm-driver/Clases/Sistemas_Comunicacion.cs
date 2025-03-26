@@ -70,7 +70,7 @@ public class Sistemas_Comunicacion
     // Método para manejar la conexión de un cliente de manera asíncrona
     public async Task HandleClientAsync(TcpClient client)
     {
-        Cajeros_Model? cajeroModel = null;
+        Cajero? cajero = null;
         try
         {
             using (client)
@@ -86,8 +86,7 @@ public class Sistemas_Comunicacion
                 }
                 Console.WriteLine($"Cliente conectado desde la IP: {clientIp}");
 
-                // Verificar si la IP del cliente está registrada
-                cajeroModel = Servicio.VerificarIpCajero(clientIp, _context);
+                Cajeros_Model? cajeroModel = Servicio.VerificarIpCajero(clientIp, _context);
                 if (cajeroModel == null)
                 {
                     Console.WriteLine($"La IP {clientIp} no está registrada. Cerrando conexión.");
@@ -96,13 +95,11 @@ public class Sistemas_Comunicacion
                     return;
                 }
 
-                // Obtener las claves de comunicación del cajero
                 var keyModel = await _context.Keys.FindAsync(cajeroModel.key_id);
                 var download = new Download();
                 await download.Inicializar(cajeroModel.download_id.Value, _context);
 
-                // Crear una instancia de Cajero con los datos obtenidos
-                Cajero cajero = new Cajero
+                cajero = new Cajero
                 {
                     Id = cajeroModel.cajero_id,
                     Codigo = cajeroModel.codigo,
@@ -114,20 +111,21 @@ public class Sistemas_Comunicacion
                     ClaveComunicacion = keyModel?.clave_comunicacion ?? string.Empty,
                     ClaveMasterKey = keyModel?.clave_masterKey ?? string.Empty,
                     Cliente = client,
-                    SistemasComunicacion = this, // Asignar la instancia de Sistemas_Comunicacion
-                    Context = _context // Asignar el contexto de la base de datos
+                    SistemasComunicacion = this,
+                    Context = _context
                 };
 
-                // Agregar el cajero a la lista de cajeros conectados
-                Program.AgregarCajero(cajeroModel);
-                Evento.GuardarEvento(CodigoEvento.Comunicaciones, $"Cajero con IP {clientIp} conectado.", cajeroModel.cajero_id, _servicioId);
-                // Actualizar el estado del cajero en la base de datos a "Fuera de Servicio"
-                var cajeroDb = await _context.Cajeros.FindAsync(cajeroModel.cajero_id);
+                // Agregar el cajero a la lista estática en Program.cs
+                Program.AgregarCajero(cajeroModel, this, client, _context);
+
+                Evento.GuardarEvento(CodigoEvento.Comunicaciones, $"Cajero con IP {clientIp} conectado.", cajero.Id, _servicioId);
+
+                var cajeroDb = await _context.Cajeros.FindAsync(cajero.Id);
                 if (cajeroDb != null)
                 {
                     cajeroDb.estado = "Fuera de Servicio";
                     await _context.SaveChangesAsync();
-                    Console.WriteLine($"Estado del cajero {cajeroModel.cajero_id} actualizado a 'Fuera de Servicio' en la base de datos.");
+                    Console.WriteLine($"Estado del cajero {cajero.Id} actualizado a 'Fuera de Servicio' en la base de datos.");
                 }
 
                 // Iniciar el proceso de descarga
@@ -154,34 +152,42 @@ public class Sistemas_Comunicacion
                             break;
                         }
 
-                        cajero.ProcesarMensaje(mensajeRecibido, cajero);
+                        await cajero.ProcesarMensaje(mensajeRecibido, cajero);
 
                         Console.WriteLine($"Mensaje recibido correctamente: {mensajeRecibido}");
+                        // 🔹 Mostrar cajeros conectados después del download
+                        var cajerosConectados = Program.ObtenerCajerosConectados();
+                        Console.WriteLine("📌 Cajeros actualmente conectados:");
+                        foreach (var cajeroConectado in cajerosConectados)
+                        {
+                            Console.WriteLine($"➡ {cajeroConectado.Codigo} - Estado: {cajeroConectado.Estado}");
+                        }
                     }
                 }
+
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error manejando cliente: {ex.Message}");
-            Evento.GuardarEvento(CodigoEvento.ServidorCliente, $"Error manejando cliente: {ex.Message}", cajeroModel?.cajero_id, _servicioId);
+            Evento.GuardarEvento(CodigoEvento.ServidorCliente, $"Error manejando cliente: {ex.Message}", cajero?.Id, _servicioId);
         }
         finally
         {
-            // Retirar el cajero de la lista cuando se desconecte
-            if (cajeroModel != null)
+            if (cajero != null)
             {
-                Program.RetirarCajero(cajeroModel.cajero_id);
-                Evento.GuardarEvento(CodigoEvento.Comunicaciones, $"Cajero con IP {cajeroModel.direccion_ip} desconectado inesperadamente.", cajeroModel.cajero_id, _servicioId);
-                Console.WriteLine($"Cajero con IP {cajeroModel.direccion_ip} desconectado inesperadamente.");
-
-                // Actualizar el estado del cajero en la base de datos a "Desconectado"
-                var cajero = await _context.Cajeros.FindAsync(cajeroModel.cajero_id);
-                if (cajero != null)
+                Program.RetirarCajero(cajero.Id);
+                if (cajero?.Cliente?.Client?.RemoteEndPoint != null)
                 {
-                    cajero.estado = "Desconectado";
+                    Evento.GuardarEvento(CodigoEvento.Comunicaciones, $"Cajero con IP {cajero.Cliente.Client.RemoteEndPoint} desconectado inesperadamente.", cajero.Id, _servicioId);
+                }
+
+                var cajeroDb = await _context.Cajeros.FindAsync(cajero?.Id);
+                if (cajeroDb != null)
+                {
+                    cajeroDb.estado = "Desconectado";
                     await _context.SaveChangesAsync();
-                    Console.WriteLine($"Estado del cajero {cajeroModel.cajero_id} actualizado a 'Desconectado' en la base de datos.");
+                    Console.WriteLine($"Estado del cajero {cajero?.Id} actualizado a 'Desconectado' en la base de datos.");
                 }
             }
         }
@@ -305,7 +311,7 @@ public class Sistemas_Comunicacion
             };
             var mensaje = new Mensaje(mensajeModel);
             mensaje.GuardarMensaje();
-
+          
             return mensajeRecibido;
         }
         catch (Exception ex)

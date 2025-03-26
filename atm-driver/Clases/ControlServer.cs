@@ -107,7 +107,6 @@ public class ControlServer
             string codigoComando = partes[1];
             Console.WriteLine($"Procesando comando {codigoComando} para cajero {codigoCajero}");
 
-            // Verificar si el codigoCajero existe en la base de datos
             var cajeroModel = _context.Cajeros.FirstOrDefault(c => c.codigo == codigoCajero);
             if (cajeroModel == null)
             {
@@ -120,29 +119,32 @@ public class ControlServer
                 return;
             }
 
-            // Verificar si el cajero está en la lista de cajeros conectados
-            var cajeroConectado = Program.ObtenerCajerosConectados().FirstOrDefault(c => c.Codigo == codigoCajero);
-            if (cajeroConectado == null)
+            // Buscar la instancia de Cajero directamente          
+            Cajero? cajero = Program.ObtenerCajerosConectados()
+                .FirstOrDefault(c => c.Codigo == codigoCajero);
+
+            if (cajero == null)
             {
-                Console.WriteLine($"Cajero con código {codigoCajero} no está conectado.");
+                Console.WriteLine($"El cajero no está conectado. {codigoCajero}");
                 Evento.GuardarEvento(CodigoEvento.ServidorCliente, $"Cajero con código {codigoCajero} no está conectado.", null, _servicioId);
 
                 // Enviar mensaje de error al panel de control
                 string mensajeError = $"{FieldSeparator}04";
                 EnviarMensaje(mensajeError, stream);
                 return;
+                     
             }
 
             switch (codigoComando)
             {
                 case "01":
-                    ColocarEnLinea(cajeroConectado);
+                    cajero.OnService();
                     break;
                 case "02":
-                    FueraDeServicio();
+                    cajero.OutService();
                     break;
                 case "03":
-                    EnviarContadores();
+                    cajero.GetSupply();
                     break;
                 default:
                     Console.WriteLine("Comando desconocido");
@@ -155,6 +157,8 @@ public class ControlServer
             Evento.GuardarEvento(CodigoEvento.ServidorCliente, $"Error al procesar mensaje: {ex.Message}", null, _servicioId);
         }
     }
+
+
 
     public void EnviarMensaje(string mensaje, NetworkStream stream)
     {
@@ -176,12 +180,13 @@ public class ControlServer
         }
     }
 
-    public void ColocarEnLinea(Cajero cajero)
+    public void ColocarEnLinea(Cajero cajero, NetworkStream stream)
     {
         if (cajero != null)
         {
             // Llamar al método OnService del cajero
             cajero.OnService();
+            EnviarMensaje("Mensaje", stream);
         }
         else
         {

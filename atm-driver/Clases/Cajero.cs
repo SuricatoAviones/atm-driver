@@ -21,19 +21,12 @@ namespace atm_driver.Clases
         public string ClaveMasterKey { get; set; }
         public string Localizacion { get; set; }
         public string Estado { get; set; }
-
-
-        // Nueva propiedad para manejar la conexión del cliente
         public TcpClient Cliente { get; set; }
-
-        // Nueva propiedad para la instancia de Sistemas_Comunicacion
         public Sistemas_Comunicacion SistemasComunicacion { get; set; }
-
-        // Nueva propiedad para el contexto de la base de datos
         public AppDbContext Context { get; set; }
-
-        //Variable ENUM para saber en que proceso esta el cajero
         public EstadoCajero estadoCajero;
+
+
         
         // Métodos
         public void Inicializar(string type)

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 
 namespace AtmDriver
@@ -13,7 +14,8 @@ namespace AtmDriver
     class Program
     {
         // Lista estática para almacenar objetos de cajeros
-        public static List<Cajeros_Model> _cajerosConectados = new List<Cajeros_Model>();
+        private static List<Cajero> _cajerosConectados = new List<Cajero>();
+
 
         static async Task Main(string[] args)
         {
@@ -71,24 +73,44 @@ namespace AtmDriver
             }
         }
 
-        public static void AgregarCajero(Cajeros_Model cajero)
+        public static void AgregarCajero(Cajeros_Model cajeroModel, Sistemas_Comunicacion sistemasComunicacion, TcpClient client, AppDbContext context)
         {
-            _cajerosConectados.Add(cajero);
+            Cajero nuevoCajero = new Cajero
+            {
+                Id = cajeroModel.cajero_id,
+                Codigo = cajeroModel.codigo,
+                Nombre = cajeroModel.nombre,
+                Marca = cajeroModel.marca,
+                Modelo = cajeroModel.modelo,
+                ClaveComunicacion = "", // Se obtiene después
+                ClaveMasterKey = "", // Se obtiene después
+                Localizacion = cajeroModel.localizacion,
+                Estado = cajeroModel.estado,
+                Cliente = client,
+                SistemasComunicacion = sistemasComunicacion,
+                Context = context
+            };
+
+            _cajerosConectados.Add(nuevoCajero);
         }
+
+
 
         public static void RetirarCajero(int cajeroId)
         {
-            var cajero = _cajerosConectados.FirstOrDefault(c => c.cajero_id == cajeroId);
+            var cajero = _cajerosConectados.FirstOrDefault(c => c.Id == cajeroId);
             if (cajero != null)
             {
                 _cajerosConectados.Remove(cajero);
             }
         }
 
-        public static List<Cajeros_Model> ObtenerCajerosConectados()
+
+        public static List<Cajero> ObtenerCajerosConectados()
         {
             return _cajerosConectados;
         }
+
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
