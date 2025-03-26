@@ -7,6 +7,7 @@ using atm_driver.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 using atm_driver.Clases;
+using atm_driver.Enums;
 namespace atm_driver.Clases
 {
     public class Cajero
@@ -41,74 +42,11 @@ namespace atm_driver.Clases
                 Console.WriteLine("Error: SistemasComunicacion no está inicializado.");
                 return;
             }
-
             string mensaje = "1"+(char)28+(char)28+(char)28+"1";
             await SistemasComunicacion.EnviarMensaje(mensaje, this, Cliente.GetStream());
             estadoCajero = EstadoCajero.InService;
             Console.WriteLine(estadoCajero + "Estado Cajero");
             Console.WriteLine("Onservice Comando Enviado");
-
-            //await EnviarMensaje_EsperarRespuesta(mensaje, cajero, stream);
-
-            // Actualizar el estado del cajero en la base de datos a "En Línea"
-            /*var cajeroD = await _context.Cajeros.FindAsync(cajeroModel.cajero_id);
-            if (cajeroDb != null)
-            {
-                cajeroDb.estado = "En Línea";
-                await _context.SaveChangesAsync();
-                Console.WriteLine($"Estado del cajero {cajeroModel.cajero_id} actualizado a 'En Línea' en la base de datos.");
-            }
-
-            // Mostrar mensaje de cajero en línea
-            Console.WriteLine($"Cajero en Línea: ID = {cajeroModel.cajero_id}, IP = {cajero.Cliente.Client.RemoteEndPoint}"); */
-
-            //await SistemasComunicacion.EnviarMensaje_EsperarRespuesta(mensaje, this, Cliente.GetStream());
-
-            // Recibir el mensaje de respuesta del cajero
-            /*string mensajeRecibido = await SistemasComunicacion.RecibirMensaje(Cliente.GetStream(), null, this);
-
-            // Separar el mensaje recibido en un arreglo usando el separador de campo (ASCII 28)
-            string[] elementos = mensajeRecibido.Split((char)28);
-
-            // Verificar si alguno de los elementos contiene un comando ilegal
-            bool comandoIlegalEncontrado = false;
-            foreach (var elemento in elementos)
-            {
-                if (DiccionarioData.IllegalCommands.ContainsKey(elemento))
-                {
-                    string observacion = DiccionarioData.IllegalCommands[elemento];
-                    Evento.GuardarEvento(CodigoEvento.Comunicaciones, observacion, Id, SistemasComunicacion.ServicioId);
-                    Console.WriteLine($"Cajero fuera de línea: {observacion}");
-                    comandoIlegalEncontrado = true;
-                    break; // Detener el procesamiento
-                }
-            }
-
-            if (comandoIlegalEncontrado)
-            {
-                // Actualizar el estado del cajero en la base de datos a "Fuera de Línea"
-                var cajero = await Context.Cajeros.FindAsync(Id);
-                if (cajero != null)
-                {
-                    cajero.estado = "Fuera de Línea";
-                    await Context.SaveChangesAsync();
-                    Console.WriteLine($"Estado del cajero {Id} actualizado a 'Fuera de Línea' en la base de datos.");
-                }
-            }
-            else
-            {
-                // Actualizar el estado del cajero en la base de datos a "En Línea"
-                var cajero = await Context.Cajeros.FindAsync(Id);
-                if (cajero != null)
-                {
-                    cajero.estado = "En Línea";
-                    await Context.SaveChangesAsync();
-                    Console.WriteLine($"Estado del cajero {Id} actualizado a 'En Línea' en la base de datos.");
-                }
-
-                // Mostrar mensaje de cajero en línea solo si no se recibió un comando ilegal
-                Console.WriteLine($"Cajero en Línea: ID = {Id}, IP = {Cliente.Client.RemoteEndPoint}");
-            }*/
         }
 
 
@@ -162,42 +100,23 @@ namespace atm_driver.Clases
                     Console.WriteLine("Esta en el PROCESO DE IN SERVICE ENTONCES SIGNIFICA QUE ES LA RESPUESTA DEL INSERVICE");
                     if (elementos[4] == "99")
                     {
-                        Console.WriteLine("El Cajero se Puso En Linea");
-                        // Actualizar el estado del cajero en la base de datos a "En Línea"
-                        if (cajeroDb != null)
-                        {
-                            cajeroDb.estado = "En Línea";
-                            await Context.SaveChangesAsync();
-                            Console.WriteLine($"Estado del cajero {Id} actualizado a 'En Línea' en la base de datos.");
-                            Evento.GuardarEvento(CodigoEvento.Comunicaciones, "El Cajero Se Coloco en Linea", cajeroDb?.cajero_id, 1);
-                        }
+                        Console.WriteLine("El Cajero se Puso En Servicio");
+                        await ActualizarEstadoCajero(EstadoCajeroEvento.EnServicio, "El Cajero Se Coloco en Linea");
                     }
                     else
                     {
-                        Console.WriteLine("No se puso en Linea");
-                        if (cajeroDb != null)
-                        {
-                            cajeroDb.estado = "Fuera de Linea";
-                            await Context.SaveChangesAsync();
-                        }
-                        Evento.GuardarEvento(CodigoEvento.Comunicaciones, "El Cajero no Logro Ponerse en Linea", cajeroDb?.cajero_id,1);
+                        Console.WriteLine("El Cajero se Puso Fuera de Servicio");
+                        await ActualizarEstadoCajero(EstadoCajeroEvento.FueraDeServicio, "El Cajero no Logro Ponerse en Linea");
 
                     }
 
                     estadoCajero = EstadoCajero.Normal;
                 } else if(estadoCajero == EstadoCajero.OutService)
-                {
+                    {
                     if (elementos[4] == "99")
                     {
                         Console.WriteLine("El Cajero se Puso Fuera Fuera de Servicio");
-                        // Actualizar el estado del cajero en la base de datos a "En Línea"
-                        if (cajeroDb != null)
-                        {
-                            cajeroDb.estado = "Fuera de Servicio";
-                            await Context.SaveChangesAsync();
-                            Console.WriteLine($"Estado del cajero {Id} actualizado a 'a Fuera de Servicios' en la base de datos.");
-                            Evento.GuardarEvento(CodigoEvento.Comunicaciones, "El Cajero Se Coloco en Fuera de Servicio", cajeroDb?.cajero_id, 1);
-                        }
+                        await ActualizarEstadoCajero(EstadoCajeroEvento.FueraDeServicio, "El Cajero Se Coloco en Fuera de Servicio");
                     }
                 }
             }
@@ -208,6 +127,21 @@ namespace atm_driver.Clases
 
             //return 0;
         }
+
+        // Método para actualizar el estado del cajero en la base de datos
+        public async Task ActualizarEstadoCajero(EstadoCajeroEvento nuevoEstado, string mensajeEvento)
+        {
+            var cajeroDb = await Context.Cajeros.FindAsync(Id);
+            if (cajeroDb != null)
+            {
+                // Convertir el enum a su representación en cadena
+                cajeroDb.estado = nuevoEstado.ToString();
+                await Context.SaveChangesAsync();
+                Console.WriteLine($"Estado del cajero {Id} actualizado a '{nuevoEstado}' en la base de datos.");
+                Evento.GuardarEvento(CodigoEvento.Comunicaciones, mensajeEvento, cajeroDb.cajero_id, 1);
+            }
+        }
+
 
         public string VerificarEstado()
         {
@@ -235,11 +169,7 @@ namespace atm_driver.Clases
             // Implementación del método
         }
 
-        public string ActualizarEstadoCajero()
-        {
-            // Implementación del método
-            return Estado;
-        }
+        
 
         public void ProcessarMensajeSolicitado()
         {

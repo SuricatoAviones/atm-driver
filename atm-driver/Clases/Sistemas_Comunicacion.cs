@@ -4,6 +4,7 @@ using AtmDriver;
 using System.Net.Sockets;
 using System.Net;
 using System.Text;
+using atm_driver.Enums;
 
 public class Sistemas_Comunicacion
 {
@@ -120,13 +121,13 @@ public class Sistemas_Comunicacion
 
                 Evento.GuardarEvento(CodigoEvento.Comunicaciones, $"Cajero con IP {clientIp} conectado.", cajero.Id, _servicioId);
 
+                // Por si se desconecta el cajero antes de iniciar el download
                 var cajeroDb = await _context.Cajeros.FindAsync(cajero.Id);
                 if (cajeroDb != null)
                 {
-                    cajeroDb.estado = "Fuera de Servicio";
-                    await _context.SaveChangesAsync();
-                    Console.WriteLine($"Estado del cajero {cajero.Id} actualizado a 'Fuera de Servicio' en la base de datos.");
+                    await cajero.ActualizarEstadoCajero(EstadoCajeroEvento.FueraDeServicio, "El Cajero Se Coloco en Fuera de Servicio");
                 }
+
 
                 // Iniciar el proceso de descarga
                 _downloadEnProgreso = true; // Marcar que el download está en progreso
@@ -156,12 +157,12 @@ public class Sistemas_Comunicacion
 
                         Console.WriteLine($"Mensaje recibido correctamente: {mensajeRecibido}");
                         // 🔹 Mostrar cajeros conectados después del download
-                        var cajerosConectados = Program.ObtenerCajerosConectados();
+                        /*var cajerosConectados = Program.ObtenerCajerosConectados();
                         Console.WriteLine("📌 Cajeros actualmente conectados:");
                         foreach (var cajeroConectado in cajerosConectados)
                         {
                             Console.WriteLine($"➡ {cajeroConectado.Codigo} - Estado: {cajeroConectado.Estado}");
-                        }
+                        }*/
                     }
                 }
 
@@ -182,13 +183,12 @@ public class Sistemas_Comunicacion
                     Evento.GuardarEvento(CodigoEvento.Comunicaciones, $"Cajero con IP {cajero.Cliente.Client.RemoteEndPoint} desconectado inesperadamente.", cajero.Id, _servicioId);
                 }
 
-                var cajeroDb = await _context.Cajeros.FindAsync(cajero?.Id);
+                var cajeroDb = await _context.Cajeros.FindAsync(cajero.Id);
                 if (cajeroDb != null)
                 {
-                    cajeroDb.estado = "Desconectado";
-                    await _context.SaveChangesAsync();
-                    Console.WriteLine($"Estado del cajero {cajero?.Id} actualizado a 'Desconectado' en la base de datos.");
+                    await cajero.ActualizarEstadoCajero(EstadoCajeroEvento.FueraDeLinea, "El Cajero se Desconecto");
                 }
+
             }
         }
     }
