@@ -30,7 +30,7 @@ namespace atm_driver.Models
         [Column("formato_cajero_id")]
         public int? formato_cajero_id { get; set; }
 
-        /*// Propiedad de navegación
-        public virtual FormatoCajero FormatoCajero { get; set; }*/
+        // Propiedad de navegación
+        public virtual Formato_Cajero_Model? FormatoCajero { get; set; }
     }
 }

@@ -17,9 +17,9 @@ namespace atm_driver.Models
         public int key_id { get; set; }
 
         [Column("clave_comunicacion")] // Especifica el nombre de la columna en la base de datos
-        public string clave_comunicacion { get; set; }
+        public string? clave_comunicacion { get; set; }
 
         [Column("clave_masterKey")] // Especifica el nombre de la columna en la base de datos
-        public string clave_masterKey { get; set; }
+        public string? clave_masterKey { get; set; }
     }
 }

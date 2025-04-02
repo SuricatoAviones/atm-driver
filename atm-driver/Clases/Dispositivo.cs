@@ -24,8 +24,12 @@ namespace atm_driver.Clases
         }
 
         public virtual void Inicializar() { }
-        public virtual string ActualizarDispositivo() => "Dispositivo actualizado";
-        public virtual string ActualizarSuministro() => "Suministro actualizado";
+        public virtual void ActualizarDispositivo()
+        {
+
+        }
+        public virtual void ActualizarSuministro() { 
+        }
         public virtual string VerificarDispositivo() => EstadoDispositivo;
         public virtual string VerificarSuministro() => EstadoSuministro;
         public virtual void EnviarInformacion() { }

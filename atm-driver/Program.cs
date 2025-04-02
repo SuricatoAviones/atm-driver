@@ -53,7 +53,7 @@ namespace AtmDriver
                         {
                             case "1":
                                 // Iniciar el servidor de comunicación
-                                var servicio = Servicio.ObtenerServicioDesdeBaseDeDatos(1, context); // Reemplaza 1 con el ID del servicio que deseas obtener
+                                var servicio = Servicio.ObtenerServicioDesdeBaseDeDatos(3, context); // Reemplaza 3 con el ID del servicio que deseas obtener
                                 var sistemasComunicacion = new Sistemas_Comunicacion(servicio.ServerIp, servicio.Port, 5001, servicio.ServicioId, context, servicio.TiempoEsperaUno);
                                 await sistemasComunicacion.Inicializar();
                                 break;
@@ -86,6 +86,7 @@ namespace AtmDriver
                 ClaveMasterKey = "", // Se obtiene después
                 Localizacion = cajeroModel.localizacion,
                 Estado = cajeroModel.estado,
+                DownloadId = (int)cajeroModel.download_id,
                 Cliente = client,
                 SistemasComunicacion = sistemasComunicacion,
                 Context = context

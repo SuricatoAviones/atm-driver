@@ -7,7 +7,5 @@ namespace atm_driver.Clases
         InService,
         OutService,
         GetSupply
-
-
     }
 }

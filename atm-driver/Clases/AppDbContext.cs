@@ -23,7 +23,52 @@ namespace atm_driver.Clases
         public DbSet<Keys_Model> Keys { get; set; }
         public DbSet<Tipo_Evento_Model> Tipo_Eventos { get; set; }
         public DbSet<Codigos_Evento_Model> Codigos_Eventos { get; set; }
+        public DbSet<Cajetin_Model> Cajetines { get; set; }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Cajeros_Model>()
+                .HasOne(c => c.Download)
+                .WithMany()
+                .HasForeignKey(c => c.download_id);
+
+            modelBuilder.Entity<Cajeros_Model>()
+                .HasOne(c => c.Key)
+                .WithMany()
+                .HasForeignKey(c => c.key_id);
+
+            modelBuilder.Entity<Cajetin_Model>()
+                .HasOne(c => c.Dispositivo)
+                .WithMany()
+                .HasForeignKey(c => c.dispositivo_id);
+
+            modelBuilder.Entity<Dispositivos_Model>()
+                .HasOne(d => d.Cajero)
+                .WithMany()
+                .HasForeignKey(d => d.cajero_id);
+
+            modelBuilder.Entity<Cajetin_Model>()
+                .HasOne(d => d.Denominaciones_Monedas)
+                .WithMany()
+                .HasForeignKey(d => d.denominacion_moneda_id);
+
+            modelBuilder.Entity<Transacciones_Model>()
+                .HasOne(t => t.Cajero)
+                .WithMany()
+                .HasForeignKey(t => t.cajero_id);
+
+            modelBuilder.Entity<Transacciones_Model>()
+                .HasOne(t => t.Denominaciones_Monedas)
+                .WithMany()
+                .HasForeignKey(t => t.denominacion_moneda_id);
+
+            modelBuilder.Entity<Codigos_Evento_Model>()
+                .HasOne(c => c.Tipo_Evento)
+                .WithMany()
+                .HasForeignKey(c => c.tipo_evento_id);
+
+
+        }
 
         public AppDbContext() { } // Constructor vacío
         public AppDbContext(DbContextOptions<AppDbContext> options)

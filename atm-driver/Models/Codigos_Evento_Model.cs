@@ -26,5 +26,8 @@ namespace atm_driver.Models
         [ForeignKey("Tipo_Eventos")]
         [Column("tipo_evento_id")]
         public int? tipo_evento_id { get; set; }
+
+        // Propiedad de Navegacion
+        public virtual Tipo_Evento_Model? Tipo_Evento { get; set; }
     }
 }

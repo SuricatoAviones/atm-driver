@@ -6,11 +6,7 @@ using System.Threading.Tasks;
 
 namespace atm_driver.Enums
 {
-    public enum EstadoCajeroEvento
+    internal class EstadoSuministroDispositivo_Enum
     {
-        EnServicio = 1,
-        FueraDeServicio = 2,
-        FueraDeLinea = 3,
-        Inactivo = 4 
     }
 }

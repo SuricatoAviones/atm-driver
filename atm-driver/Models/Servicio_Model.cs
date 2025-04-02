@@ -26,9 +26,16 @@ namespace atm_driver.Models
         public int? tiempo_espera_dos {  get; set; }
         
         [Column("tipo_mensaje_id")]
-        public Tipo_Mensaje_Model? tipo_mensaje_id { get; set; }
+        [ForeignKey("Tipo_Mensaje")]
+        public int? tipo_mensaje_id { get; set; }
 
-        [Column("tipo_comunicacion_id")]
-        public Sistemas_Comunicacion_Model? sistema_comunicacion_id  { get; set; }  
+        [Column("sistema_comunicacion_id")]
+        [ForeignKey("Sistemas_Comunicacion")]
+        public int? sistema_comunicacion_id  { get; set; }
+
+        // Propiedad de navegación
+        public virtual Tipo_Mensaje_Model? Tipo_Mensaje { get; set; }
+        public virtual Sistemas_Comunicacion_Model? Sistemas_Comunicacion { get; set; }
+
     }
 }

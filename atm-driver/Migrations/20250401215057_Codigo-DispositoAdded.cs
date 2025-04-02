@@ -5,34 +5,35 @@
 namespace atm_driver.Migrations
 {
     /// <inheritdoc />
-    public partial class keyschanged : Migration
+    public partial class CodigoDispositoAdded : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<int>(
-                name: "download_id",
-                table: "Cajeros",
+                name: "codigo",
+                table: "Dispositivos",
                 type: "int",
                 nullable: true);
 
             migrationBuilder.AddColumn<int>(
-                name: "key_id",
-                table: "Cajeros",
+                name: "cantidad_ultima_transaccion",
+                table: "Cajetines",
                 type: "int",
-                nullable: true);
+                nullable: false,
+                defaultValue: 0);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "download_id",
-                table: "Cajeros");
+                name: "codigo",
+                table: "Dispositivos");
 
             migrationBuilder.DropColumn(
-                name: "key_id",
-                table: "Cajeros");
+                name: "cantidad_ultima_transaccion",
+                table: "Cajetines");
         }
     }
 }

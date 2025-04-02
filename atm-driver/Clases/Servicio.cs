@@ -17,8 +17,8 @@ namespace atm_driver.Clases
         // Constructor para inicializar desde base de datos
         public Servicio(Servicio_Model servicioModel, AppDbContext context)
         {
-            ServerIp = servicioModel.sistema_comunicacion_id?.direccion_ip ?? throw new ArgumentNullException(nameof(servicioModel.sistema_comunicacion_id.direccion_ip));
-            Port = int.TryParse(servicioModel.sistema_comunicacion_id?.puerto_tcp, out var port) ? port : throw new ArgumentNullException(nameof(servicioModel.sistema_comunicacion_id.puerto_tcp));
+            ServerIp = servicioModel.Sistemas_Comunicacion?.direccion_ip ?? throw new ArgumentNullException(nameof(servicioModel.Sistemas_Comunicacion.direccion_ip));
+            Port = int.TryParse(servicioModel.Sistemas_Comunicacion?.puerto_tcp, out var port) ? port : throw new ArgumentNullException(nameof(servicioModel.Sistemas_Comunicacion.puerto_tcp));
             TiempoEsperaUno = servicioModel.tiempo_espera_uno ?? 10000; // Valor por defecto si es null
             ServicioId = servicioModel.servicio_id;
             _context = context;
@@ -48,7 +48,7 @@ namespace atm_driver.Clases
             try
             {
                 var servicioModel = context.Servicios
-                    .Include(s => s.sistema_comunicacion_id)
+                    .Include(s => s.Sistemas_Comunicacion)
                     .FirstOrDefault(s => s.servicio_id == servicioId);
 
                 if (servicioModel == null)
@@ -78,6 +78,7 @@ namespace atm_driver.Clases
                 throw;
             }
         }
+
 
         private static void RegistrarErrorBaseDatos(string mensajeError)
         {

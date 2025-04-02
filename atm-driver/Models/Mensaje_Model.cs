@@ -15,8 +15,12 @@ namespace atm_driver.Models
         public string? mensaje { get; set; }
         public bool? origen { get; set; }
         public DateTime hora_entrada { get; set; }
+        
         [ForeignKey("Servicios")]
         [Column("servicio_id")]
         public int? servicio_id { get; set; }
+
+        // Propiedad de navegación
+        public virtual Servicio_Model? Servicios { get; set; }
     }
 }

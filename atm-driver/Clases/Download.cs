@@ -26,16 +26,21 @@ namespace atm_driver.Clases
             }
 
             Id = downloadModel.download_id;
-            Nombre = downloadModel.nombre;
-            Ruta = downloadModel.ruta;
+            Nombre = downloadModel.nombre ?? string.Empty;
+            Ruta = downloadModel.ruta ?? string.Empty;
             FormatoCajeroId = downloadModel.formato_cajero_id ?? 0;
 
-            Console.WriteLine($"Datos de Download para el ID {downloadId}:");
-            Console.WriteLine($"Nombre: {Nombre}");
-            Console.WriteLine($"Ruta: {Ruta}");
-            Console.WriteLine($"Formato Cajero ID: {FormatoCajeroId}");
-            EstablecerConfiguracion();
+            // Leer las líneas del archivo de configuración
+            if (!string.IsNullOrEmpty(Ruta) && File.Exists(Ruta))
+            {
+                Lineas = await File.ReadAllLinesAsync(Ruta);
+            }
+            else
+            {
+                Lineas = Array.Empty<string>();
+            }
         }
+
 
         public void EstablecerConfiguracion()
         {
@@ -126,9 +131,10 @@ namespace atm_driver.Clases
                     // Recibir el mensaje de respuesta del cajero
                     string mensajeRecibido = await sistemasComunicacion.RecibirMensaje(stream, this, cajero);
 
-
                     // Separar el mensaje recibido en un arreglo usando el separador de campo (ASCII 28)
                     string[] elementos = mensajeRecibido.Split((char)28);
+
+                    // TODO: Verificar si el cuarto (verificar manual si es el 4to) de los elementos contiene un comando ilegal
 
                     // Verificar si alguno de los elementos contiene un comando ilegal
                     foreach (var elemento in elementos)
@@ -227,10 +233,10 @@ namespace atm_driver.Clases
                 downloadDetenido = true;
             }
 
-         
-
             return downloadDetenido;
         }
+
+
     }
 }
 

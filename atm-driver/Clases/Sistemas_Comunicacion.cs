@@ -97,6 +97,15 @@ public class Sistemas_Comunicacion
                 }
 
                 var keyModel = await _context.Keys.FindAsync(cajeroModel.key_id);
+                if (cajeroModel.download_id == null)
+                {
+                    Console.WriteLine("Error: El ID de descarga es nulo. Cerrando conexión.");
+                    client.Close();
+                    return;
+                }
+
+                //TODO: sera que se inicializa con cajero y no Cajero_Model
+
                 var download = new Download();
                 await download.Inicializar(cajeroModel.download_id.Value, _context);
 
@@ -109,12 +118,23 @@ public class Sistemas_Comunicacion
                     Modelo = cajeroModel.modelo,
                     Localizacion = cajeroModel.localizacion,
                     Estado = cajeroModel.estado,
+                    DownloadId = cajeroModel.download_id.Value,
                     ClaveComunicacion = keyModel?.clave_comunicacion ?? string.Empty,
                     ClaveMasterKey = keyModel?.clave_masterKey ?? string.Empty,
                     Cliente = client,
                     SistemasComunicacion = this,
                     Context = _context
                 };
+
+                // Verificar el estado del cajero en la base de datos
+                string estadoCajero = await cajero.VerificarEstado();
+                if (estadoCajero == ((int)EstadoCajeroEvento.Inactivo).ToString())
+                {
+                    Console.WriteLine($"El cajero con IP {clientIp} está inactivo. Cerrando conexión.");
+                    Evento.GuardarEvento(CodigoEvento.Comunicaciones, $"Cajero con IP {clientIp} está inactivo. Conexión cerrada.", cajero.Id, _servicioId);
+                    client.Close();
+                    return;
+                }
 
                 // Agregar el cajero a la lista estática en Program.cs
                 Program.AgregarCajero(cajeroModel, this, client, _context);
@@ -128,7 +148,6 @@ public class Sistemas_Comunicacion
                     await cajero.ActualizarEstadoCajero(EstadoCajeroEvento.FueraDeServicio, "El Cajero Se Coloco en Fuera de Servicio");
                 }
 
-
                 // Iniciar el proceso de descarga
                 _downloadEnProgreso = true; // Marcar que el download está en progreso
                 bool downloadDetenido = await download.EnvioDownload(cajero, this, stream);
@@ -139,7 +158,6 @@ public class Sistemas_Comunicacion
                     Evento.GuardarEvento(CodigoEvento.Download, "Download terminado", cajeroModel.cajero_id, _servicioId);
                     _downloadEnProgreso = false; // Marcar que el download ha terminado
                     cajero.OnService();
-
 
                     // Continuar recibiendo mensajes del cajero
                     while (client.Connected)
@@ -156,21 +174,17 @@ public class Sistemas_Comunicacion
                         await cajero.ProcesarMensaje(mensajeRecibido, cajero);
 
                         Console.WriteLine($"Mensaje recibido correctamente: {mensajeRecibido}");
-                        // 🔹 Mostrar cajeros conectados después del download
-                        /*var cajerosConectados = Program.ObtenerCajerosConectados();
-                        Console.WriteLine("📌 Cajeros actualmente conectados:");
-                        foreach (var cajeroConectado in cajerosConectados)
-                        {
-                            Console.WriteLine($"➡ {cajeroConectado.Codigo} - Estado: {cajeroConectado.Estado}");
-                        }*/
                     }
                 }
-
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error manejando cliente: {ex.Message}");
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+            }
             Evento.GuardarEvento(CodigoEvento.ServidorCliente, $"Error manejando cliente: {ex.Message}", cajero?.Id, _servicioId);
         }
         finally
@@ -188,10 +202,13 @@ public class Sistemas_Comunicacion
                 {
                     await cajero.ActualizarEstadoCajero(EstadoCajeroEvento.FueraDeLinea, "El Cajero se Desconecto");
                 }
-
             }
         }
     }
+
+
+
+
 
     // Método para enviar un mensaje al cajero y esperar una respuesta
     public async Task EnviarMensaje_EsperarRespuesta(string mensaje, Cajero cajero, NetworkStream stream)
@@ -355,4 +372,33 @@ public class Sistemas_Comunicacion
         }
         return localIP;
     }
+
+    public async void CerrarConexion(Cajero cajero)
+    {
+        try
+        {
+            if (cajero.Cliente != null)
+            {
+                cajero.Cliente.Close();
+                Console.WriteLine($"Conexión cerrada para el cajero con código: {cajero.Codigo}");
+            }
+            Program.RetirarCajero(cajero.Id);
+            if (cajero?.Cliente?.Client?.RemoteEndPoint != null)
+            {
+                Evento.GuardarEvento(CodigoEvento.Comunicaciones, $"Cajero con IP {cajero.Cliente.Client.RemoteEndPoint} desconectado inesperadamente.", cajero.Id, _servicioId);
+            }
+
+            var cajeroDb = await _context.Cajeros.FindAsync(cajero.Id);
+            if (cajeroDb != null)
+            {
+                await cajero.ActualizarEstadoCajero(EstadoCajeroEvento.FueraDeLinea, "El Cajero se Desconecto");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cerrar la conexión: {ex.Message}");
+            Evento.GuardarEvento(CodigoEvento.ServidorCliente, $"Error al cerrar la conexión: {ex.Message}", cajero.Id, _servicioId);
+        }
+    }
+
 }

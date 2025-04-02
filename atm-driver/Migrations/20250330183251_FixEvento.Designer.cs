@@ -12,15 +12,15 @@ using atm_driver.Clases;
 namespace atm_driver.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250207025009_Changedtype")]
-    partial class Changedtype
+    [Migration("20250330183251_FixEvento")]
+    partial class FixEvento
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.0")
+                .HasAnnotation("ProductVersion", "9.0.2")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -65,20 +65,22 @@ namespace atm_driver.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("cajero_id"));
 
-                    b.Property<string>("clave_comunicacion")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("clave_masterKey")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("codigo")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("download_id1")
-                        .HasColumnType("int");
+                    b.Property<string>("direccion_ip")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("download_id")
+                        .HasColumnType("int")
+                        .HasColumnName("download_id");
 
                     b.Property<string>("estado")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("key_id")
+                        .HasColumnType("int")
+                        .HasColumnName("key_id");
 
                     b.Property<string>("localizacion")
                         .HasColumnType("nvarchar(max)");
@@ -95,9 +97,63 @@ namespace atm_driver.Migrations
 
                     b.HasKey("cajero_id");
 
-                    b.HasIndex("download_id1");
+                    b.HasIndex("download_id");
+
+                    b.HasIndex("key_id");
 
                     b.ToTable("Cajeros");
+                });
+
+            modelBuilder.Entity("atm_driver.Models.Cajetin_Model", b =>
+                {
+                    b.Property<int>("cajetin_id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("cajetin_id"));
+
+                    b.Property<int>("cantidad_dispensada")
+                        .HasColumnType("int");
+
+                    b.Property<int>("cantidad_disponible")
+                        .HasColumnType("int");
+
+                    b.Property<int>("cantidad_rechazada")
+                        .HasColumnType("int");
+
+                    b.Property<string>("denominacion")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("denominacion_moneda_id")
+                        .HasColumnType("int")
+                        .HasColumnName("denominacion_moneda_id");
+
+                    b.Property<int>("dispositivo_id")
+                        .HasColumnType("int")
+                        .HasColumnName("dispositivo_id");
+
+                    b.Property<DateTime>("fecha_habil")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("numero_cajetin")
+                        .HasColumnType("int");
+
+                    b.Property<string>("tipo")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("tipo_denominacion")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("cajetin_id");
+
+                    b.HasIndex("denominacion_moneda_id");
+
+                    b.HasIndex("dispositivo_id");
+
+                    b.ToTable("Cajetines");
                 });
 
             modelBuilder.Entity("atm_driver.Models.Codigos_Evento_Model", b =>
@@ -118,7 +174,13 @@ namespace atm_driver.Migrations
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("nombre");
 
+                    b.Property<int?>("tipo_evento_id")
+                        .HasColumnType("int")
+                        .HasColumnName("tipo_evento_id");
+
                     b.HasKey("codigo_evento_id");
+
+                    b.HasIndex("tipo_evento_id");
 
                     b.ToTable("Codigos_Evento");
                 });
@@ -156,11 +218,9 @@ namespace atm_driver.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("dispositivo_id"));
 
-                    b.Property<int?>("cajero_id1")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("codigo_moneda_iddenominacion_moneda_id")
-                        .HasColumnType("int");
+                    b.Property<int?>("cajero_id")
+                        .HasColumnType("int")
+                        .HasColumnName("cajero_id");
 
                     b.Property<string>("estado_dispositivo")
                         .HasMaxLength(500)
@@ -179,9 +239,7 @@ namespace atm_driver.Migrations
 
                     b.HasKey("dispositivo_id");
 
-                    b.HasIndex("cajero_id1");
-
-                    b.HasIndex("codigo_moneda_iddenominacion_moneda_id");
+                    b.HasIndex("cajero_id");
 
                     b.ToTable("Dispositivos");
                 });
@@ -195,8 +253,9 @@ namespace atm_driver.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("download_id"));
 
-                    b.Property<int?>("FormatoCajero")
-                        .HasColumnType("int");
+                    b.Property<int?>("formato_cajero_id")
+                        .HasColumnType("int")
+                        .HasColumnName("formato_cajero_id");
 
                     b.Property<string>("nombre")
                         .HasMaxLength(255)
@@ -210,7 +269,7 @@ namespace atm_driver.Migrations
 
                     b.HasKey("download_id");
 
-                    b.HasIndex("FormatoCajero");
+                    b.HasIndex("formato_cajero_id");
 
                     b.ToTable("Downloads");
                 });
@@ -224,8 +283,13 @@ namespace atm_driver.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("evento_id"));
 
-                    b.Property<int?>("codigo_evento_id1")
-                        .HasColumnType("int");
+                    b.Property<int?>("cajero_id")
+                        .HasColumnType("int")
+                        .HasColumnName("cajero_id");
+
+                    b.Property<int?>("codigo_evento_id")
+                        .HasColumnType("int")
+                        .HasColumnName("codigo_evento_id");
 
                     b.Property<DateTime>("fecha")
                         .HasColumnType("datetime2")
@@ -241,6 +305,10 @@ namespace atm_driver.Migrations
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("observaciones");
 
+                    b.Property<int?>("servicio_id")
+                        .HasColumnType("int")
+                        .HasColumnName("servicio_id");
+
                     b.Property<string>("tipo")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
@@ -248,7 +316,11 @@ namespace atm_driver.Migrations
 
                     b.HasKey("evento_id");
 
-                    b.HasIndex("codigo_evento_id1");
+                    b.HasIndex("cajero_id");
+
+                    b.HasIndex("codigo_evento_id");
+
+                    b.HasIndex("servicio_id");
 
                     b.ToTable("Eventos");
                 });
@@ -277,6 +349,28 @@ namespace atm_driver.Migrations
                     b.ToTable("Formato_Cajero");
                 });
 
+            modelBuilder.Entity("atm_driver.Models.Keys_Model", b =>
+                {
+                    b.Property<int>("key_id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("key_id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("key_id"));
+
+                    b.Property<string>("clave_comunicacion")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("clave_comunicacion");
+
+                    b.Property<string>("clave_masterKey")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("clave_masterKey");
+
+                    b.HasKey("key_id");
+
+                    b.ToTable("Keys");
+                });
+
             modelBuilder.Entity("atm_driver.Models.Mensaje_Model", b =>
                 {
                     b.Property<int>("mensaje_id")
@@ -291,15 +385,16 @@ namespace atm_driver.Migrations
                     b.Property<string>("mensaje")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("origen")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<bool?>("origen")
+                        .HasColumnType("bit");
 
-                    b.Property<int?>("servicio_id1")
-                        .HasColumnType("int");
+                    b.Property<int?>("servicio_id")
+                        .HasColumnType("int")
+                        .HasColumnName("servicio_id");
 
                     b.HasKey("mensaje_id");
 
-                    b.HasIndex("servicio_id1");
+                    b.HasIndex("servicio_id");
 
                     b.ToTable("Mensajes");
                 });
@@ -344,23 +439,25 @@ namespace atm_driver.Migrations
                     b.Property<string>("nombre")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("sistema_comunicacion_id")
+                        .HasColumnType("int")
+                        .HasColumnName("sistema_comunicacion_id");
+
                     b.Property<int?>("tiempo_espera_dos")
                         .HasColumnType("int");
 
                     b.Property<int?>("tiempo_espera_uno")
                         .HasColumnType("int");
 
-                    b.Property<int?>("tipo_comunicacion_idsistema_comunicacion_id")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("tipo_mensaje_id1")
-                        .HasColumnType("int");
+                    b.Property<int?>("tipo_mensaje_id")
+                        .HasColumnType("int")
+                        .HasColumnName("tipo_mensaje_id");
 
                     b.HasKey("servicio_id");
 
-                    b.HasIndex("tipo_comunicacion_idsistema_comunicacion_id");
+                    b.HasIndex("sistema_comunicacion_id");
 
-                    b.HasIndex("tipo_mensaje_id1");
+                    b.HasIndex("tipo_mensaje_id");
 
                     b.ToTable("Servicios");
                 });
@@ -414,11 +511,35 @@ namespace atm_driver.Migrations
                     b.ToTable("Sistemas_Comunicacion");
                 });
 
+            modelBuilder.Entity("atm_driver.Models.Tipo_Evento_Model", b =>
+                {
+                    b.Property<int>("tipo_evento_id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("tipo_evento_id"));
+
+                    b.Property<string>("descripcion")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("descripcion");
+
+                    b.Property<string>("nombre")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("nombre");
+
+                    b.HasKey("tipo_evento_id");
+
+                    b.ToTable("Tipo_Eventos");
+                });
+
             modelBuilder.Entity("atm_driver.Models.Tipo_Mensaje_Model", b =>
                 {
                     b.Property<int>("tipo_mensaje_id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("tipo_mensaje_id");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("tipo_mensaje_id"));
 
@@ -448,6 +569,10 @@ namespace atm_driver.Migrations
                         .HasColumnType("int")
                         .HasColumnName("numero_autorizacion");
 
+                    b.Property<int?>("cajero_id")
+                        .HasColumnType("int")
+                        .HasColumnName("cajero_id");
+
                     b.Property<string>("codigo")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)")
@@ -456,6 +581,10 @@ namespace atm_driver.Migrations
                     b.Property<int?>("codigo_respuesta")
                         .HasColumnType("int")
                         .HasColumnName("codigo_respuesta");
+
+                    b.Property<int?>("denominacion_moneda_id")
+                        .HasColumnType("int")
+                        .HasColumnName("denominacion_moneda_id");
 
                     b.Property<DateTime?>("fecha_mensaje")
                         .HasColumnType("datetime2")
@@ -509,6 +638,10 @@ namespace atm_driver.Migrations
 
                     b.HasKey("transaccion_id");
 
+                    b.HasIndex("cajero_id");
+
+                    b.HasIndex("denominacion_moneda_id");
+
                     b.ToTable("Transacciones");
                 });
 
@@ -529,89 +662,147 @@ namespace atm_driver.Migrations
                     b.Property<string>("password")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("rol_id1")
+                    b.Property<int?>("rol_id")
                         .HasColumnType("int");
 
                     b.HasKey("usuario_id");
 
-                    b.HasIndex("rol_id1");
+                    b.HasIndex("rol_id");
 
                     b.ToTable("Usuarios");
                 });
 
             modelBuilder.Entity("atm_driver.Models.Cajeros_Model", b =>
                 {
-                    b.HasOne("atm_driver.Models.Download_Model", "download_id")
+                    b.HasOne("atm_driver.Models.Download_Model", "Download")
                         .WithMany()
-                        .HasForeignKey("download_id1");
+                        .HasForeignKey("download_id");
 
-                    b.Navigation("download_id");
+                    b.HasOne("atm_driver.Models.Keys_Model", "Key")
+                        .WithMany()
+                        .HasForeignKey("key_id");
+
+                    b.Navigation("Download");
+
+                    b.Navigation("Key");
+                });
+
+            modelBuilder.Entity("atm_driver.Models.Cajetin_Model", b =>
+                {
+                    b.HasOne("atm_driver.Models.Denominaciones_Monedas_Model", "Denominaciones_Monedas")
+                        .WithMany()
+                        .HasForeignKey("denominacion_moneda_id");
+
+                    b.HasOne("atm_driver.Models.Dispositivos_Model", "Dispositivo")
+                        .WithMany()
+                        .HasForeignKey("dispositivo_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Denominaciones_Monedas");
+
+                    b.Navigation("Dispositivo");
+                });
+
+            modelBuilder.Entity("atm_driver.Models.Codigos_Evento_Model", b =>
+                {
+                    b.HasOne("atm_driver.Models.Tipo_Evento_Model", "Tipo_Evento")
+                        .WithMany()
+                        .HasForeignKey("tipo_evento_id");
+
+                    b.Navigation("Tipo_Evento");
                 });
 
             modelBuilder.Entity("atm_driver.Models.Dispositivos_Model", b =>
                 {
-                    b.HasOne("atm_driver.Models.Cajeros_Model", "cajero_id")
+                    b.HasOne("atm_driver.Models.Cajeros_Model", "Cajero")
                         .WithMany()
-                        .HasForeignKey("cajero_id1");
+                        .HasForeignKey("cajero_id");
 
-                    b.HasOne("atm_driver.Models.Denominaciones_Monedas_Model", "codigo_moneda_id")
-                        .WithMany()
-                        .HasForeignKey("codigo_moneda_iddenominacion_moneda_id");
-
-                    b.Navigation("cajero_id");
-
-                    b.Navigation("codigo_moneda_id");
+                    b.Navigation("Cajero");
                 });
 
             modelBuilder.Entity("atm_driver.Models.Download_Model", b =>
                 {
-                    b.HasOne("atm_driver.Models.Formato_Cajero_Model", "formato_cajero_id")
+                    b.HasOne("atm_driver.Models.Formato_Cajero_Model", "FormatoCajero")
                         .WithMany()
-                        .HasForeignKey("FormatoCajero");
+                        .HasForeignKey("formato_cajero_id");
 
-                    b.Navigation("formato_cajero_id");
+                    b.Navigation("FormatoCajero");
                 });
 
             modelBuilder.Entity("atm_driver.Models.Eventos_Model", b =>
                 {
-                    b.HasOne("atm_driver.Models.Codigos_Evento_Model", "codigo_evento_id")
+                    b.HasOne("atm_driver.Models.Cajeros_Model", "Cajeros")
                         .WithMany()
-                        .HasForeignKey("codigo_evento_id1");
+                        .HasForeignKey("cajero_id");
 
-                    b.Navigation("codigo_evento_id");
+                    b.HasOne("atm_driver.Models.Codigos_Evento_Model", "Codigos_Evento")
+                        .WithMany()
+                        .HasForeignKey("codigo_evento_id");
+
+                    b.HasOne("atm_driver.Models.Servicio_Model", "Servicios")
+                        .WithMany()
+                        .HasForeignKey("servicio_id");
+
+                    b.Navigation("Cajeros");
+
+                    b.Navigation("Codigos_Evento");
+
+                    b.Navigation("Servicios");
                 });
 
             modelBuilder.Entity("atm_driver.Models.Mensaje_Model", b =>
                 {
-                    b.HasOne("atm_driver.Models.Servicio_Model", "servicio_id")
+                    b.HasOne("atm_driver.Models.Servicio_Model", "Servicios")
                         .WithMany()
-                        .HasForeignKey("servicio_id1");
+                        .HasForeignKey("servicio_id");
 
-                    b.Navigation("servicio_id");
+                    b.Navigation("Servicios");
                 });
 
             modelBuilder.Entity("atm_driver.Models.Servicio_Model", b =>
                 {
-                    b.HasOne("atm_driver.Models.Sistemas_Comunicacion_Model", "tipo_comunicacion_id")
+                    b.HasOne("atm_driver.Models.Sistemas_Comunicacion_Model", "Sistemas_Comunicacion")
                         .WithMany()
-                        .HasForeignKey("tipo_comunicacion_idsistema_comunicacion_id");
+                        .HasForeignKey("sistema_comunicacion_id");
 
-                    b.HasOne("atm_driver.Models.Tipo_Mensaje_Model", "tipo_mensaje_id")
+                    b.HasOne("atm_driver.Models.Tipo_Mensaje_Model", "Tipo_Mensaje")
                         .WithMany()
-                        .HasForeignKey("tipo_mensaje_id1");
+                        .HasForeignKey("tipo_mensaje_id");
 
-                    b.Navigation("tipo_comunicacion_id");
+                    b.Navigation("Sistemas_Comunicacion");
 
-                    b.Navigation("tipo_mensaje_id");
+                    b.Navigation("Tipo_Mensaje");
+                });
+
+            modelBuilder.Entity("atm_driver.Models.Transacciones_Model", b =>
+                {
+                    b.HasOne("atm_driver.Models.Cajeros_Model", "Cajero")
+                        .WithMany()
+                        .HasForeignKey("cajero_id");
+
+                    b.HasOne("atm_driver.Models.Denominaciones_Monedas_Model", "Denominaciones_Monedas")
+                        .WithMany()
+                        .HasForeignKey("denominacion_moneda_id");
+
+                    b.Navigation("Cajero");
+
+                    b.Navigation("Denominaciones_Monedas");
                 });
 
             modelBuilder.Entity("atm_driver.Models.Usuarios_Model", b =>
                 {
-                    b.HasOne("atm_driver.Models.Rol_Model", "rol_id")
-                        .WithMany()
-                        .HasForeignKey("rol_id1");
+                    b.HasOne("atm_driver.Models.Rol_Model", "Rol")
+                        .WithMany("Usuarios")
+                        .HasForeignKey("rol_id");
 
-                    b.Navigation("rol_id");
+                    b.Navigation("Rol");
+                });
+
+            modelBuilder.Entity("atm_driver.Models.Rol_Model", b =>
+                {
+                    b.Navigation("Usuarios");
                 });
 #pragma warning restore 612, 618
         }

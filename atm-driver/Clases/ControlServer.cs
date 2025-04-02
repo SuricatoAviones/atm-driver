@@ -5,6 +5,8 @@ using System.Net;
 using System.Text;
 using System.Collections.Generic;
 using atm_driver.Models;
+using System.IO;
+using atm_driver.Enums;
 
 public class ControlServer
 {
@@ -16,13 +18,14 @@ public class ControlServer
     private readonly AppDbContext _context;
     private readonly int _servicioId;
     private readonly char FieldSeparator = (char)28; // ASCII 28
-
+    private bool _downloadEnProgreso;
     private ControlServer(int controlPort, AppDbContext context, int servicioId)
     {
         _controlPort = controlPort;
         _context = context;
         _servicioId = servicioId;
         _controlServer = new TcpListener(IPAddress.Any, controlPort);
+        _downloadEnProgreso = false;
     }
 
     public static ControlServer GetInstance(int controlPort, AppDbContext context, int servicioId)
@@ -96,7 +99,7 @@ public class ControlServer
         }
     }
 
-    public void ProcesarMensaje(string mensaje, NetworkStream stream)
+    public async void  ProcesarMensaje(string mensaje, NetworkStream stream)
     {
         try
         {
@@ -114,14 +117,19 @@ public class ControlServer
                 Evento.GuardarEvento(CodigoEvento.ServidorCliente, $"Cajero con código {codigoCajero} no encontrado en la base de datos.", null, _servicioId);
 
                 // Enviar mensaje de error al panel de control
-                string mensajeError = $"{FieldSeparator}03";
+                string mensajeError = $"{FieldSeparator}02";
                 EnviarMensaje(mensajeError, stream);
                 return;
             }
+ 
 
             // Buscar la instancia de Cajero directamente          
             Cajero? cajero = Program.ObtenerCajerosConectados()
                 .FirstOrDefault(c => c.Codigo == codigoCajero);
+
+            // Verificar el estado del cajero en la base de datos
+            string estadoCajero = await cajero.VerificarEstado();
+            Console.WriteLine($"Estado actual del cajero {codigoCajero}: {estadoCajero}");
 
             if (cajero == null)
             {
@@ -138,15 +146,28 @@ public class ControlServer
             switch (codigoComando)
             {
                 case "01":
-                    cajero.OnService();
+                    ColocarEnServicio(cajero, stream);
                     break;
                 case "02":
-                    cajero.OutService();
+                    FueraDeServicio(cajero, stream);
                     break;
                 case "03":
-                    cajero.GetSupply();
+                    EnviarDownload(cajero, stream);
+                    break;
+                case "04":
+                    EnviarContadores( cajero, stream);
+                    break;
+                case "05":
+                    FueraDeLinea(cajero, stream);
+                    break;
+                case "06":
+                    ObtenerStatus(cajero, stream);
+                    break;
+                case "07":
+                    InactivarCajero(cajero, stream);
                     break;
                 default:
+                    ComandoDesconocido(stream);
                     Console.WriteLine("Comando desconocido");
                     break;
             }
@@ -180,30 +201,146 @@ public class ControlServer
         }
     }
 
-    public void ColocarEnLinea(Cajero cajero, NetworkStream stream)
+    public void ColocarEnServicio(Cajero cajero, NetworkStream stream)
     {
         if (cajero != null)
         {
             // Llamar al método OnService del cajero
             cajero.OnService();
-            EnviarMensaje("Mensaje", stream);
+            string mensaje = $"{FieldSeparator}01";
+            EnviarMensaje(mensaje, stream);
         }
         else
         {
+            string mensaje = $"{FieldSeparator}03";
+            EnviarMensaje(mensaje, stream);
             Console.WriteLine($"Cajero no está conectado.");
         }
     }
 
-    public void EnviarContadores()
+    public void FueraDeServicio(Cajero cajero, NetworkStream stream)
     {
+
+        if (cajero != null)
+        {
+            // Llamar al método OnService del cajero
+            cajero.OutService();
+            string mensaje = $"{FieldSeparator}01";
+            EnviarMensaje(mensaje, stream);
+        }
+        else
+        {
+            string mensaje = $"{FieldSeparator}03";
+            EnviarMensaje(mensaje, stream);
+            Console.WriteLine($"Cajero no está conectado.");
+        }
     }
 
-    public void FueraDeServicio()
+    public void InactivarCajero(Cajero cajero, NetworkStream stream)
     {
+        if (cajero != null)
+        {
+            // Llamar al método ActualizarEstadoCajero para poner el cajero como Inactivo
+            cajero.ActualizarEstadoCajero(EstadoCajeroEvento.Inactivo, "El Cajero ha sido inactivado").Wait();
+            string mensaje = $"{FieldSeparator}01";
+            EnviarMensaje(mensaje, stream);
+        }
+        else
+        {
+            string mensaje = $"{FieldSeparator}03";
+            EnviarMensaje(mensaje, stream);
+            Console.WriteLine($"Cajero no está conectado.");
+        }
     }
 
-    public void FueraDeLinea()
+    public void ObtenerStatus(Cajero cajero, NetworkStream stream)
     {
+
+    }
+
+    //TODO: Revisar el método EnviarDownload Ya que esta fallando
+    public async Task EnviarDownload(Cajero cajero, NetworkStream stream)
+    {
+        if (cajero != null)
+        {
+            try
+            {
+                // Iniciar el proceso de descarga
+                var download = new Download();
+                await download.Inicializar(cajero.DownloadId, _context);
+
+                // Enviar las líneaswdel archivo de configuración al cajero
+                _downloadEnProgreso = true;
+                bool downloadDetenido = await download.EnvioDownload(cajero, cajero.SistemasComunicacion, stream);
+                if (!downloadDetenido)
+                {
+                    // Guardar evento al finalizar el download
+                    //Evento.GuardarEvento(CodigoEvento.Download, "Download terminado", cajero.Id, _servicioId);
+                    _downloadEnProgreso = false;
+                    await cajero.OnService();
+                }
+                string mensaje = $"{FieldSeparator}01";
+                EnviarMensaje(mensaje, stream);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al enviar download: {ex.Message}");
+                Evento.GuardarEvento(CodigoEvento.ServidorCliente, $"Error al enviar download: {ex.Message}", cajero.Id, _servicioId);
+                string mensaje = $"{FieldSeparator}03";
+                EnviarMensaje(mensaje, stream);
+            }
+        }
+        else
+        {
+            string mensaje = $"{FieldSeparator}03";
+            EnviarMensaje(mensaje, stream);
+            Console.WriteLine($"Cajero no está conectado.");
+        }
+    }
+
+
+
+
+    public void EnviarContadores(Cajero cajero, NetworkStream stream)
+    {
+        if (cajero != null)
+        {
+            // Llamar al método CerrarConexion del sistema de comunicación
+            cajero.GetSupply();
+            string mensaje = $"{FieldSeparator}01";
+            EnviarMensaje(mensaje, stream);
+        }
+        else
+        {
+            string mensaje = $"{FieldSeparator}03";
+            EnviarMensaje(mensaje, stream);
+            Console.WriteLine($"Cajero no está conectado.");
+        }
+    }
+
+    public void FueraDeLinea(Cajero cajero, NetworkStream stream)
+    {
+        if (cajero != null)
+        {
+            // Llamar al método CerrarConexion del sistema de comunicación
+            cajero.SistemasComunicacion.CerrarConexion(cajero);
+            string mensaje = $"{FieldSeparator}01";
+            EnviarMensaje(mensaje, stream);
+        }
+        else
+        {
+            string mensaje = $"{FieldSeparator}03";
+            EnviarMensaje(mensaje, stream);
+            Console.WriteLine($"Cajero no está conectado.");
+        }
+    }
+
+
+    public void ComandoDesconocido( NetworkStream stream)
+    {
+        string mensaje = $"{FieldSeparator}05";
+        EnviarMensaje(mensaje, stream);
+
     }
 
     private string ObtenerIpLocal()

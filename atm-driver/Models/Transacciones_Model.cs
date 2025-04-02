@@ -66,16 +66,16 @@ namespace atm_driver.Models
         public string? pin { get; set; }
 
         // Claves Foráneas
-         /*/[ForeignKey("CodigoMoneda")]
-        [Column("codigo_moneda_id")]
-        public int? CodigoMonedaId { get; set; }
+        [ForeignKey("Denominaciones_Monedas")]
+        [Column("denominacion_moneda_id")]
+        public int? denominacion_moneda_id { get; set; }
 
-        [ForeignKey("Cajero")]
+        [ForeignKey("Cajeros")]
         [Column("cajero_id")]
-        public int? CajeroId { get; set; }*/
+        public int? cajero_id { get; set; }
 
         // Propiedades de navegación
-        //public virtual CodigoMoneda CodigoMoneda { get; set; }
-        //public virtual Cajero Cajero { get; set; }
+        public virtual Denominaciones_Monedas_Model? Denominaciones_Monedas { get; set; }
+        public virtual Cajeros_Model? Cajero { get; set; }
     }
 }

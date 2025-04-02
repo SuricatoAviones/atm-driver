@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "+Tga9zWz1no=",
+  "dgSpecHash": "ngAws9P2uAI=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Luis Angel\\Desktop\\apps in c#\\24-03\\atm-driver\\atm-driver\\atm-driver.csproj",
+  "projectFilePath": "C:\\Users\\Luis Angel\\Desktop\\apps in c#\\27-03\\atm-driver\\atm-driver\\atm-driver.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Luis Angel\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\Luis Angel\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",

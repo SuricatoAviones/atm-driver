@@ -45,6 +45,12 @@ namespace atm_driver.Models
         [Column("servicio_id")]
         public int? servicio_id { get; set; }
 
-        
+        // Propiedad de navegación
+        public virtual Codigos_Evento_Model? Codigos_Evento { get; set; }
+        public virtual Cajeros_Model? Cajeros { get; set; }
+        public virtual Servicio_Model? Servicios { get; set; }
+
+
+
     }
 }

@@ -71,20 +71,32 @@ namespace atm_driver.Clases
 
         public static void GuardarEvento(CodigoEvento codigoEvento, string observaciones, int? cajeroId, int? servicioId)
         {
-            using (var context = new AppDbContext())
+            try
             {
-                var evento = new Eventos_Model
+                using (var context = new AppDbContext())
                 {
-                    codigo_evento_id = (int)codigoEvento,
-                    fecha = DateTime.Now,
-                    observaciones = observaciones,
-                    cajero_id = cajeroId,
-                    servicio_id = servicioId
-                };
+                    var evento = new Eventos_Model
+                    {
+                        codigo_evento_id = (int)codigoEvento,
+                        fecha = DateTime.Now,
+                        observaciones = observaciones,
+                        cajero_id = cajeroId,
+                        servicio_id = servicioId
+                    };
 
-                context.Eventos.Add(evento);
-                context.SaveChanges();
+                    context.Eventos.Add(evento);
+                    context.SaveChanges();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error guardando evento: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
             }
         }
+
     }
 }
