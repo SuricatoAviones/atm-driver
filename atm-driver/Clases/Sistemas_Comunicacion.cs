@@ -104,8 +104,6 @@ public class Sistemas_Comunicacion
                     return;
                 }
 
-                //TODO: sera que se inicializa con cajero y no Cajero_Model
-
                 var download = new Download();
                 await download.Inicializar(cajeroModel.download_id.Value, _context);
 
@@ -122,6 +120,7 @@ public class Sistemas_Comunicacion
                     ClaveComunicacion = keyModel?.clave_comunicacion ?? string.Empty,
                     ClaveMasterKey = keyModel?.clave_masterKey ?? string.Empty,
                     Cliente = client,
+                    StreamComunicacion = stream, // Asignar el stream aquí
                     SistemasComunicacion = this,
                     Context = _context
                 };
@@ -137,7 +136,7 @@ public class Sistemas_Comunicacion
                 }
 
                 // Agregar el cajero a la lista estática en Program.cs
-                Program.AgregarCajero(cajeroModel, this, client, _context);
+                Program.AgregarCajero(cajero);
 
                 Evento.GuardarEvento(CodigoEvento.Comunicaciones, $"Cajero con IP {clientIp} conectado.", cajero.Id, _servicioId);
 
@@ -157,7 +156,7 @@ public class Sistemas_Comunicacion
                     // Guardar evento al finalizar el download
                     Evento.GuardarEvento(CodigoEvento.Download, "Download terminado", cajeroModel.cajero_id, _servicioId);
                     _downloadEnProgreso = false; // Marcar que el download ha terminado
-                    cajero.OnService();
+                    await cajero.OnService();
 
                     // Continuar recibiendo mensajes del cajero
                     while (client.Connected)
@@ -210,6 +209,7 @@ public class Sistemas_Comunicacion
 
 
 
+
     // Método para enviar un mensaje al cajero y esperar una respuesta
     public async Task EnviarMensaje_EsperarRespuesta(string mensaje, Cajero cajero, NetworkStream stream)
     {
@@ -230,7 +230,7 @@ public class Sistemas_Comunicacion
             }
         }
     }
-
+    //TODO: METER EN UN TRY CATCH
     // Método para enviar un mensaje al cajero
     public async Task EnviarMensaje(string mensaje, Cajero cajero, NetworkStream stream)
     {
@@ -264,10 +264,31 @@ public class Sistemas_Comunicacion
         var mensajeGuardado = new Mensaje(mensajeModel);
         mensajeGuardado.GuardarMensaje();
     }
-
+    //TODO: METER EN UN TRY CATCH
     // Método para recibir un mensaje del cajero
     public async Task<string> RecibirMensaje(NetworkStream stream, Download? download, Cajero cajero)
     {
+        // Asegúrate de que el stream sea válido
+        /*if (stream == null)
+        {
+            Console.WriteLine("Error: Stream nulo en RecibirMensaje");
+
+            // Intentar recuperar un stream válido del cajero
+            if (cajero != null && cajero.Cliente != null && cajero.Cliente.Connected)
+            {
+                stream = cajero.Cliente.GetStream();
+                cajero.StreamComunicacion = stream; // Actualizar la referencia
+                Console.WriteLine("Se recuperó un nuevo stream del cajero");
+            }
+
+            if (stream == null)
+            {
+                Console.WriteLine("Error: No se pudo recuperar un stream válido");
+                return string.Empty;
+            }
+        }*/
+
+
         // BufferSize es 1024 y esta en la clase Control
         byte[] buffer = new byte[Control.BufferSize];
 

@@ -69,6 +69,15 @@ namespace atm_driver.Clases
 
         public async Task<bool> EnviarSiguienteLinea(Cajero cajero, Sistemas_Comunicacion sistemasComunicacion, NetworkStream stream)
         {
+
+            Console.WriteLine($"EnviarSiguienteLinea: Stream nulo? {stream == null}");
+            /*if (stream == null && cajero.Cliente.Connected)
+            {
+                stream = cajero.Cliente.GetStream();
+                cajero.StreamComunicacion = stream;
+                Console.WriteLine("Se recuperó un nuevo stream en EnviarSiguienteLinea");
+            } */
+
             if (_lineaActual >= Lineas.Length)
             {
                 return false; // No hay más líneas para enviar
@@ -106,6 +115,15 @@ namespace atm_driver.Clases
         public async Task<bool> EnvioDownload(Cajero cajero, Sistemas_Comunicacion sistemasComunicacion, NetworkStream stream)
         {
             Console.WriteLine("Enviando Download ...");
+
+            // Verificar que tenemos un stream válido
+            /*if (stream == null || !cajero.Cliente.Connected)
+            {
+                Console.WriteLine("Error: Stream nulo o cliente desconectado en EnvioDownload");
+                Evento.GuardarEvento(CodigoEvento.Download, "Error: Stream nulo o cliente desconectado",
+                                    cajero.Id, sistemasComunicacion.ServicioId);
+                return true; // Download detenido
+            }*/
 
             bool downloadDetenido = false;
 

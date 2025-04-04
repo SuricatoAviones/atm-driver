@@ -22,7 +22,7 @@ namespace atm_driver.Clases
         public string ClaveMasterKey { get; set; }
         public string Localizacion { get; set; }
         public string Estado { get; set; }
-
+        public NetworkStream StreamComunicacion { get; set; }
         public int DownloadId { get; set; }
         public TcpClient Cliente { get; set; }
         public Sistemas_Comunicacion SistemasComunicacion { get; set; }
@@ -30,8 +30,10 @@ namespace atm_driver.Clases
 
         public EstadoCajero estadoCajero;
 
+        private bool _downloadEnProgreso = false;
 
-        
+
+
         // Métodos
         public void Inicializar(string type)
         {
@@ -85,6 +87,32 @@ namespace atm_driver.Clases
             Console.WriteLine(estadoCajero + "Estado Cajero");
             Console.WriteLine("GetSupply Comando Enviado");
         }
+
+        public async Task ReenviarDownload(Cajero cajero)
+        {
+            // Iniciar el proceso de descarga
+            var download = new Download();
+            await download.Inicializar(cajero.DownloadId, Context);
+
+            // Verificar que el stream no sea nulo
+            if (StreamComunicacion == null)
+            {
+                Console.WriteLine("Error: StreamComunicacion es nulo en ReenviarDownload");
+                return;
+            }
+
+            // Enviar las líneas del archivo de configuración al cajero
+            _downloadEnProgreso = true;
+            bool downloadDetenido = await download.EnvioDownload(cajero, cajero.SistemasComunicacion, StreamComunicacion);
+            if (!downloadDetenido)
+            {
+                // Guardar evento al finalizar el download
+                //Evento.GuardarEvento(CodigoEvento.Download, "Download terminado", cajero.Id, _servicioId);
+                _downloadEnProgreso = false;
+                await cajero.OnService();
+            }
+        }
+
 
 
 
@@ -160,7 +188,7 @@ namespace atm_driver.Clases
                     cajeroDb.estado = ((int)nuevoEstado).ToString();
                     await Context.SaveChangesAsync();
                     Console.WriteLine($"Estado del cajero {Id} actualizado a '{(int)nuevoEstado}' en la base de datos.");
-                    Evento.GuardarEvento(CodigoEvento.Comunicaciones, mensajeEvento, cajeroDb.cajero_id, 1);
+                    Evento.GuardarEvento(CodigoEvento.Comunicaciones, mensajeEvento, cajeroDb.cajero_id, null);
                 }
             }
             catch (Exception ex)
@@ -171,6 +199,7 @@ namespace atm_driver.Clases
                     Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
                 }
             }
+
         }
 
 
@@ -191,6 +220,35 @@ namespace atm_driver.Clases
                 return "Estado no disponible";
             }
         }
+
+
+        /*public NetworkStream GetValidStream()
+        {
+            try
+            {
+                // Si el stream es nulo o el cliente no está conectado, intentar obtener uno nuevo
+                if (StreamComunicacion == null || !Cliente.Connected)
+                {
+                    if (Cliente.Connected)
+                    {
+                        StreamComunicacion = Cliente.GetStream();
+                        Console.WriteLine("Se creó un nuevo stream para el cajero.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Error: El cliente no está conectado, no se puede obtener el stream.");
+                        return null;
+                    }
+                }
+
+                return StreamComunicacion;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al obtener stream válido: {ex.Message}");
+                return null;
+            }
+        } */
 
 
         public void ReportarTransaction()

@@ -18,14 +18,14 @@ public class ControlServer
     private readonly AppDbContext _context;
     private readonly int _servicioId;
     private readonly char FieldSeparator = (char)28; // ASCII 28
-    private bool _downloadEnProgreso;
+    //private bool _downloadEnProgreso;
     private ControlServer(int controlPort, AppDbContext context, int servicioId)
     {
         _controlPort = controlPort;
         _context = context;
         _servicioId = servicioId;
         _controlServer = new TcpListener(IPAddress.Any, controlPort);
-        _downloadEnProgreso = false;
+        //_downloadEnProgreso = false;
     }
 
     public static ControlServer GetInstance(int controlPort, AppDbContext context, int servicioId)
@@ -99,7 +99,7 @@ public class ControlServer
         }
     }
 
-    public async void  ProcesarMensaje(string mensaje, NetworkStream stream)
+    public async void ProcesarMensaje(string mensaje, NetworkStream stream)
     {
         try
         {
@@ -121,15 +121,10 @@ public class ControlServer
                 EnviarMensaje(mensajeError, stream);
                 return;
             }
- 
 
             // Buscar la instancia de Cajero directamente          
-            Cajero? cajero = Program.ObtenerCajerosConectados()
+            Cajero cajero = Program.ObtenerCajerosConectados()
                 .FirstOrDefault(c => c.Codigo == codigoCajero);
-
-            // Verificar el estado del cajero en la base de datos
-            string estadoCajero = await cajero.VerificarEstado();
-            Console.WriteLine($"Estado actual del cajero {codigoCajero}: {estadoCajero}");
 
             if (cajero == null)
             {
@@ -140,8 +135,11 @@ public class ControlServer
                 string mensajeError = $"{FieldSeparator}04";
                 EnviarMensaje(mensajeError, stream);
                 return;
-                     
             }
+
+            // Verificar el estado del cajero en la base de datos
+            string estadoCajero = await cajero.VerificarEstado();
+            Console.WriteLine($"Estado actual del cajero {codigoCajero}: {estadoCajero}");
 
             switch (codigoComando)
             {
@@ -155,7 +153,7 @@ public class ControlServer
                     EnviarDownload(cajero, stream);
                     break;
                 case "04":
-                    EnviarContadores( cajero, stream);
+                    EnviarContadores(cajero, stream);
                     break;
                 case "05":
                     FueraDeLinea(cajero, stream);
@@ -179,8 +177,6 @@ public class ControlServer
         }
     }
 
-
-
     public void EnviarMensaje(string mensaje, NetworkStream stream)
     {
         try
@@ -197,7 +193,7 @@ public class ControlServer
         finally
         {
             // Cerrar la conexión después de enviar el mensaje
-            stream.Close();
+            //stream.Close();
         }
     }
 
@@ -220,7 +216,6 @@ public class ControlServer
 
     public void FueraDeServicio(Cajero cajero, NetworkStream stream)
     {
-
         if (cajero != null)
         {
             // Llamar al método OnService del cajero
@@ -255,7 +250,7 @@ public class ControlServer
 
     public void ObtenerStatus(Cajero cajero, NetworkStream stream)
     {
-
+        // Implementación del método ObtenerStatus
     }
 
     //TODO: Revisar el método EnviarDownload Ya que esta fallando
@@ -265,20 +260,8 @@ public class ControlServer
         {
             try
             {
-                // Iniciar el proceso de descarga
-                var download = new Download();
-                await download.Inicializar(cajero.DownloadId, _context);
-
-                // Enviar las líneaswdel archivo de configuración al cajero
-                _downloadEnProgreso = true;
-                bool downloadDetenido = await download.EnvioDownload(cajero, cajero.SistemasComunicacion, stream);
-                if (!downloadDetenido)
-                {
-                    // Guardar evento al finalizar el download
-                    //Evento.GuardarEvento(CodigoEvento.Download, "Download terminado", cajero.Id, _servicioId);
-                    _downloadEnProgreso = false;
-                    await cajero.OnService();
-                }
+                Console.WriteLine(cajero);
+                await cajero.ReenviarDownload(cajero);
                 string mensaje = $"{FieldSeparator}01";
                 EnviarMensaje(mensaje, stream);
             }
@@ -297,9 +280,6 @@ public class ControlServer
             Console.WriteLine($"Cajero no está conectado.");
         }
     }
-
-
-
 
     public void EnviarContadores(Cajero cajero, NetworkStream stream)
     {
@@ -335,12 +315,10 @@ public class ControlServer
         }
     }
 
-
-    public void ComandoDesconocido( NetworkStream stream)
+    public void ComandoDesconocido(NetworkStream stream)
     {
         string mensaje = $"{FieldSeparator}05";
         EnviarMensaje(mensaje, stream);
-
     }
 
     private string ObtenerIpLocal()

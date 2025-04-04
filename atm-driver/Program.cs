@@ -73,27 +73,11 @@ namespace AtmDriver
             }
         }
 
-        public static void AgregarCajero(Cajeros_Model cajeroModel, Sistemas_Comunicacion sistemasComunicacion, TcpClient client, AppDbContext context)
+        public static void AgregarCajero(Cajero cajero)
         {
-            Cajero nuevoCajero = new Cajero
-            {
-                Id = cajeroModel.cajero_id,
-                Codigo = cajeroModel.codigo,
-                Nombre = cajeroModel.nombre,
-                Marca = cajeroModel.marca,
-                Modelo = cajeroModel.modelo,
-                ClaveComunicacion = "", // Se obtiene después
-                ClaveMasterKey = "", // Se obtiene después
-                Localizacion = cajeroModel.localizacion,
-                Estado = cajeroModel.estado,
-                DownloadId = (int)cajeroModel.download_id,
-                Cliente = client,
-                SistemasComunicacion = sistemasComunicacion,
-                Context = context
-            };
-
-            _cajerosConectados.Add(nuevoCajero);
+            _cajerosConectados.Add(cajero);
         }
+
 
 
 

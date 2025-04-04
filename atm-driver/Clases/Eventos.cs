@@ -75,6 +75,25 @@ namespace atm_driver.Clases
             {
                 using (var context = new AppDbContext())
                 {
+                    // Verificar que el codigoEvento existe en la tabla Codigos_Evento
+                    var codigoEventoExiste = context.Codigos_Eventos.Any(ce => ce.codigo_evento_id == (int)codigoEvento);
+                    if (!codigoEventoExiste)
+                    {
+                        Console.WriteLine($"Error: El código de evento con ID {(int)codigoEvento} no existe.");
+                        return;
+                    }
+
+                    // Verificar que el servicioId existe en la tabla Servicios
+                    if (servicioId.HasValue)
+                    {
+                        var servicioExiste = context.Servicios.Any(s => s.servicio_id == servicioId.Value);
+                        if (!servicioExiste)
+                        {
+                            Console.WriteLine($"Error: El servicio con ID {servicioId.Value} no existe.");
+                            return;
+                        }
+                    }
+
                     var evento = new Eventos_Model
                     {
                         codigo_evento_id = (int)codigoEvento,
@@ -97,6 +116,7 @@ namespace atm_driver.Clases
                 }
             }
         }
+
 
     }
 }

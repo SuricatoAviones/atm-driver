@@ -35,6 +35,7 @@ namespace atm_driver.Clases
             Evento.GuardarEvento(CodigoEvento, Observaciones ?? "Sin observaciones", CajeroId, ServicioId);
         }
 
+
         public void NotificarEvento()
         {
             // Lógica para notificar el evento
