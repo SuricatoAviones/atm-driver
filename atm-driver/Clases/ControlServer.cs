@@ -193,7 +193,7 @@ public class ControlServer
         finally
         {
             // Cerrar la conexión después de enviar el mensaje
-            //stream.Close();
+            stream.Close();
         }
     }
 
@@ -248,9 +248,22 @@ public class ControlServer
         }
     }
 
-    public void ObtenerStatus(Cajero cajero, NetworkStream stream)
+    public async Task ObtenerStatus(Cajero cajero, NetworkStream stream)
     {
         // Implementación del método ObtenerStatus
+        if (cajero != null)
+        {
+            // Llamar al método ActualizarEstadoCajero para poner el cajero como Inactivo
+            await cajero.GetConfigurationInformation();
+            string mensaje = $"{FieldSeparator}01";
+            EnviarMensaje(mensaje, stream);
+        }
+        else
+        {
+            string mensaje = $"{FieldSeparator}03";
+            EnviarMensaje(mensaje, stream);
+            Console.WriteLine($"Cajero no está conectado.");
+        }
     }
 
     //TODO: Revisar el método EnviarDownload Ya que esta fallando
@@ -260,9 +273,8 @@ public class ControlServer
         {
             try
             {
-                Console.WriteLine(cajero);
-                await cajero.ReenviarDownload(cajero);
                 string mensaje = $"{FieldSeparator}01";
+                await cajero.EnviarDownload(cajero);
                 EnviarMensaje(mensaje, stream);
             }
             catch (Exception ex)

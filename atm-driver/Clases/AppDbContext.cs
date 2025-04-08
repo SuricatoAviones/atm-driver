@@ -24,6 +24,7 @@ namespace atm_driver.Clases
         public DbSet<Tipo_Evento_Model> Tipo_Eventos { get; set; }
         public DbSet<Codigos_Evento_Model> Codigos_Eventos { get; set; }
         public DbSet<Cajetin_Model> Cajetines { get; set; }
+        public DbSet<Cajeros_Dispositivos_Model> Cajeros_Dispositivos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -38,14 +39,18 @@ namespace atm_driver.Clases
                 .HasForeignKey(c => c.key_id);
 
             modelBuilder.Entity<Cajetin_Model>()
-                .HasOne(c => c.Dispositivo)
+                .HasOne(c => c.Cajeros_Dispositivos)
                 .WithMany()
-                .HasForeignKey(c => c.dispositivo_id);
+                .HasForeignKey(c => c.cajero_dispositivo_id);
 
-            modelBuilder.Entity<Dispositivos_Model>()
+            modelBuilder.Entity<Cajeros_Dispositivos_Model>()
                 .HasOne(d => d.Cajero)
                 .WithMany()
                 .HasForeignKey(d => d.cajero_id);
+            modelBuilder.Entity<Cajeros_Dispositivos_Model>()
+               .HasOne(d => d.Dispositivo)
+               .WithMany()
+               .HasForeignKey(d => d.dispositivo_id);
 
             modelBuilder.Entity<Cajetin_Model>()
                 .HasOne(d => d.Denominaciones_Monedas)

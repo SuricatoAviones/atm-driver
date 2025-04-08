@@ -29,16 +29,16 @@ namespace atm_driver.Models
 
         public DateTime fecha_habil { get; set; }
 
-        [ForeignKey("Dispositivos")]
-        [Column("dispositivo_id")]
-        public int dispositivo_id { get; set; }
+        [ForeignKey("Cajeros_Dispositivos")]
+        [Column("cajero_dispositivo_id")]
+        public int cajero_dispositivo_id { get; set; }
 
         [ForeignKey("Denominaciones_Monedas")]
         [Column("denominacion_moneda_id")]
         public int? denominacion_moneda_id { get; set; }
 
         // Propiedad de navegación
-        public virtual Dispositivos_Model? Dispositivo { get; set; }
+        public virtual Cajeros_Dispositivos_Model? Cajeros_Dispositivos { get; set; }
 
         public virtual Denominaciones_Monedas_Model? Denominaciones_Monedas { get; set; }
     }

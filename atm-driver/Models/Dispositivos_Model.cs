@@ -25,21 +25,6 @@ namespace atm_driver.Models
         [Column("codigo")]
         public int? codigo { get; set; }
 
-        [Column("estado_dispositivo")]
-        [StringLength(500)] 
-        public string? estado_dispositivo { get; set; }
-
-        [Column("estado_suministro")]
-        [StringLength(500)] 
-        public string? estado_suministro { get; set; }
-
-
-        [ForeignKey("Cajeros")]
-        [Column("cajero_id")]
-        public int? cajero_id { get; set; }
-
-        // Propiedad de navegación
-        public virtual Cajeros_Model? Cajero { get; set; }
-        
+       
     }
 }

@@ -6,6 +6,8 @@ namespace atm_driver.Clases
         Normal,
         InService,
         OutService,
-        GetSupply
+        GetSupply,
+        GetConfigurationInformation,
+        Download
     }
 }

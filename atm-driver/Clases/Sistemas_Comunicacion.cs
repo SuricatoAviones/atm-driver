@@ -104,8 +104,7 @@ public class Sistemas_Comunicacion
                     return;
                 }
 
-                var download = new Download();
-                await download.Inicializar(cajeroModel.download_id.Value, _context);
+                
 
                 cajero = new Cajero
                 {
@@ -148,33 +147,25 @@ public class Sistemas_Comunicacion
                 }
 
                 // Iniciar el proceso de descarga
-                _downloadEnProgreso = true; // Marcar que el download está en progreso
-                bool downloadDetenido = await download.EnvioDownload(cajero, this, stream);
+                await cajero.EnviarDownload(cajero);
 
-                if (!downloadDetenido)
+                //TODO: podria usar un do while para enviar primero el download y con un if que si cajero no esta conectado da error pero si lo esta envia el download
+                //Recibiendo mensajes del cajero
+                while (client.Connected)
                 {
-                    // Guardar evento al finalizar el download
-                    Evento.GuardarEvento(CodigoEvento.Download, "Download terminado", cajeroModel.cajero_id, _servicioId);
-                    _downloadEnProgreso = false; // Marcar que el download ha terminado
-                    await cajero.OnService();
-
-                    // Continuar recibiendo mensajes del cajero
-                    while (client.Connected)
+                    string mensajeRecibido = await RecibirMensaje(stream, cajero);
+                    // Si el mensaje recibido está vacío o tiene errores, cerrar conexión
+                    if (string.IsNullOrEmpty(mensajeRecibido))
                     {
-                        string mensajeRecibido = await RecibirMensaje(stream, download, cajero);
-
-                        // Si el mensaje recibido está vacío o tiene errores, cerrar conexión
-                        if (string.IsNullOrEmpty(mensajeRecibido))
-                        {
-                            Console.WriteLine("Se recibió un mensaje vacío o inválido. Cerrando conexión con el cajero.");
-                            break;
-                        }
-
-                        await cajero.ProcesarMensaje(mensajeRecibido, cajero);
-
-                        Console.WriteLine($"Mensaje recibido correctamente: {mensajeRecibido}");
+                        Console.WriteLine("Se recibió un mensaje vacío o inválido. Cerrando conexión con el cajero.");
+                        break;
                     }
+                    await cajero.ProcesarMensaje(mensajeRecibido, cajero);
+                    Console.WriteLine($"Mensaje recibido correctamente: {mensajeRecibido}");
                 }
+
+               
+
             }
         }
         catch (Exception ex)
@@ -222,7 +213,7 @@ public class Sistemas_Comunicacion
             try
             {
                 // Esperar la respuesta del cajero con el token de cancelación
-                await RecibirMensaje(stream, null, cajero).WaitAsync(cts.Token);
+                await RecibirMensaje(stream, cajero).WaitAsync(cts.Token);
             }
             catch (OperationCanceledException)
             {
@@ -266,7 +257,7 @@ public class Sistemas_Comunicacion
     }
     //TODO: METER EN UN TRY CATCH
     // Método para recibir un mensaje del cajero
-    public async Task<string> RecibirMensaje(NetworkStream stream, Download? download, Cajero cajero)
+    public async Task<string> RecibirMensaje(NetworkStream stream, Cajero cajero)
     {
         // Asegúrate de que el stream sea válido
         /*if (stream == null)

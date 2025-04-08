@@ -88,20 +88,26 @@ namespace atm_driver.Clases
 
         private static async Task ActualizarCajetin(AppDbContext context, int dispositivoId, int codigoDispositivo, int cantidadDisponible, int cantidadRechazada, int cantidadDispensada, int cantidadUltimaTransaccion)
         {
-            var dispositivo = await context.Dispositivos.FirstOrDefaultAsync(d => d.cajero_id == dispositivoId && d.codigo == codigoDispositivo);
+            var dispositivo = await context.Dispositivos.FirstOrDefaultAsync(d => d.codigo == codigoDispositivo);
             if (dispositivo != null)
             {
-                var cajetinDb = await context.Cajetines.FirstOrDefaultAsync(c => c.dispositivo_id == dispositivo.dispositivo_id);
-
-                if (cajetinDb != null)
+                var cajeroDispositivo = await context.Cajeros_Dispositivos.FirstOrDefaultAsync(cd => cd.dispositivo_id == dispositivo.dispositivo_id && cd.cajero_id == dispositivoId);
+                if (cajeroDispositivo != null)
                 {
-                    cajetinDb.cantidad_disponible = cantidadDisponible;
-                    cajetinDb.cantidad_rechazada = cantidadRechazada;
-                    cajetinDb.cantidad_dispensada = cantidadDispensada;
-                    cajetinDb.cantidad_ultima_transaccion = cantidadUltimaTransaccion;
+                    var cajetinDb = await context.Cajetines.FirstOrDefaultAsync(c => c.cajero_dispositivo_id == cajeroDispositivo.cajero_dispositivo_id);
+
+                    if (cajetinDb != null)
+                    {
+                        cajetinDb.cantidad_disponible = cantidadDisponible;
+                        cajetinDb.cantidad_rechazada = cantidadRechazada;
+                        cajetinDb.cantidad_dispensada = cantidadDispensada;
+                        cajetinDb.cantidad_ultima_transaccion = cantidadUltimaTransaccion;
+                    }
                 }
             }
         }
+
+
 
         public void RecibirInformacion() { }
         public void ProcesarInformacion() { }

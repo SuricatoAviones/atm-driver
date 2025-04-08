@@ -16,6 +16,8 @@ namespace atm_driver.Clases
         public string[] Lineas { get; private set; } // Propiedad para almacenar las líneas
         public int FormatoCajeroId { get; set; } // Propiedad para almacenar el formato del cajero
         private int _lineaActual; // Propiedad para rastrear la línea actual
+        private bool _esperandoRespuesta; // Flag para indicar si estamos esperando respuesta
+        private bool _downloadDetenido; // Flag para indicar si el download fue detenido
 
         public async Task Inicializar(int downloadId, AppDbContext context)
         {
@@ -29,6 +31,9 @@ namespace atm_driver.Clases
             Nombre = downloadModel.nombre ?? string.Empty;
             Ruta = downloadModel.ruta ?? string.Empty;
             FormatoCajeroId = downloadModel.formato_cajero_id ?? 0;
+            _esperandoRespuesta = false;
+            _lineaActual = 0;
+            _downloadDetenido = false;
 
             // Leer las líneas del archivo de configuración
             if (!string.IsNullOrEmpty(Ruta) && File.Exists(Ruta))
@@ -40,7 +45,6 @@ namespace atm_driver.Clases
                 Lineas = Array.Empty<string>();
             }
         }
-
 
         public void EstablecerConfiguracion()
         {
@@ -69,14 +73,7 @@ namespace atm_driver.Clases
 
         public async Task<bool> EnviarSiguienteLinea(Cajero cajero, Sistemas_Comunicacion sistemasComunicacion, NetworkStream stream)
         {
-
             Console.WriteLine($"EnviarSiguienteLinea: Stream nulo? {stream == null}");
-            /*if (stream == null && cajero.Cliente.Connected)
-            {
-                stream = cajero.Cliente.GetStream();
-                cajero.StreamComunicacion = stream;
-                Console.WriteLine("Se recuperó un nuevo stream en EnviarSiguienteLinea");
-            } */
 
             if (_lineaActual >= Lineas.Length)
             {
@@ -103,158 +100,112 @@ namespace atm_driver.Clases
                 }
             }
 
-            // Enviar mensaje al cajero y esperar respuesta
+            // Enviar mensaje al cajero
             await sistemasComunicacion.EnviarMensaje(mensajeFormateado, cajero, stream);
+            _esperandoRespuesta = true;
 
-            _lineaActual++; // Incrementar la línea actual
-
-            return true; // Aún hay más líneas para enviar
+            return true; // Indica que se envió una línea
         }
 
-
-        public async Task<bool> EnvioDownload(Cajero cajero, Sistemas_Comunicacion sistemasComunicacion, NetworkStream stream)
+        public void AvanzarALaSiguienteLinea()
         {
-            Console.WriteLine("Enviando Download ...");
+            _lineaActual++;
+            _esperandoRespuesta = false;
+        }
 
-            // Verificar que tenemos un stream válido
-            /*if (stream == null || !cajero.Cliente.Connected)
-            {
-                Console.WriteLine("Error: Stream nulo o cliente desconectado en EnvioDownload");
-                Evento.GuardarEvento(CodigoEvento.Download, "Error: Stream nulo o cliente desconectado",
-                                    cajero.Id, sistemasComunicacion.ServicioId);
-                return true; // Download detenido
-            }*/
+        public bool EsperandoRespuesta()
+        {
+            return _esperandoRespuesta;
+        }
 
-            bool downloadDetenido = false;
+        public bool HayMasLineas()
+        {
+            return _lineaActual < Lineas.Length;
+        }
 
-            // Método local para EnvioDownloadNDC
-            async Task<bool> EnvioDownloadNDC()
-            {
-                Console.WriteLine("Enviando Download NDC ...");
+        public bool DownloadDetenido()
+        {
+            return _downloadDetenido;
+        }
 
-                // Guardar evento cuando inicia la descarga
-                Evento.GuardarEvento(CodigoEvento.Download, "Iniciando descarga del download NDC", cajero.Id, sistemasComunicacion.ServicioId);
+        public void SetDownloadDetenido(bool detenido)
+        {
+            _downloadDetenido = detenido;
+        }
 
-                bool downloadDetenidoLocal = false;
-
-                // Enviar las líneas del archivo de configuración al cajero
-                while (_lineaActual < Lineas.Length)
-                {
-                    bool hayMasLineas = await EnviarSiguienteLinea(cajero, sistemasComunicacion, stream);
-                    if (!hayMasLineas)
-                    {
-                        break;
-                    }
-
-                    // Recibir el mensaje de respuesta del cajero
-                    string mensajeRecibido = await sistemasComunicacion.RecibirMensaje(stream, this, cajero);
-
-                    // Separar el mensaje recibido en un arreglo usando el separador de campo (ASCII 28)
-                    string[] elementos = mensajeRecibido.Split((char)28);
-
-                    // TODO: Verificar si el cuarto (verificar manual si es el 4to) de los elementos contiene un comando ilegal
-
-                    // Verificar si alguno de los elementos contiene un comando ilegal
-                    foreach (var elemento in elementos)
-                    {
-                        if (DiccionarioData.IllegalCommands.ContainsKey(elemento))
-                        {
-                            string observacion = DiccionarioData.IllegalCommands[elemento];
-                            Evento.GuardarEvento(CodigoEvento.Download, observacion, cajero.Id, sistemasComunicacion.ServicioId);
-                            Console.WriteLine($"Deteniendo envío del download: {observacion}");
-                            downloadDetenidoLocal = true;
-                            break; // Detener el envío sin cerrar la conexión
-                        }
-                    }
-
-                    if (downloadDetenidoLocal)
-                    {
-                        break;
-                    }
-                }
-
-                if (!downloadDetenidoLocal)
-                {
-                    // Guardar evento al finalizar el download      
-                    Evento.GuardarEvento(CodigoEvento.Download, "Download NDC terminado", cajero.Id, sistemasComunicacion.ServicioId);
-                }
-
-                return downloadDetenidoLocal;
-            }
-
-            // Método local para EnvioDownloadTCS
-            async Task<bool> EnvioDownloadTCS()
-            {
-                Console.WriteLine("Enviando Download TCS ...");
-
-                // Guardar evento cuando inicia la descarga
-                Evento.GuardarEvento(CodigoEvento.Download, "Iniciando descarga del download TCS", cajero.Id, sistemasComunicacion.ServicioId);
-
-                bool downloadDetenidoLocal = false;
-
-                // Enviar las líneas del archivo de configuración al cajero
-                while (_lineaActual < Lineas.Length)
-                {
-                    bool hayMasLineas = await EnviarSiguienteLinea(cajero, sistemasComunicacion, stream);
-                    if (!hayMasLineas)
-                    {
-                        break;
-                    }
-
-                    // Recibir el mensaje de respuesta del cajero
-                    string mensajeRecibido = await sistemasComunicacion.RecibirMensaje(stream, this, cajero);
-
-                    // Separar el mensaje recibido en un arreglo usando el separador de campo (ASCII 28)
-                    string[] elementos = mensajeRecibido.Split((char)28);
-
-                    // Verificar si alguno de los elementos contiene un comando ilegal
-                    foreach (var elemento in elementos)
-                    {
-                        if (DiccionarioData.IllegalCommands.ContainsKey(elemento))
-                        {
-                            string observacion = DiccionarioData.IllegalCommands[elemento];
-                            Evento.GuardarEvento(CodigoEvento.Download, observacion, cajero.Id, sistemasComunicacion.ServicioId);
-                            Console.WriteLine($"Deteniendo envío del download: {observacion}");
-                            downloadDetenidoLocal = true;
-                            break; // Detener el envío sin cerrar la conexión
-                        }
-                    }
-
-                    if (downloadDetenidoLocal)
-                    {
-                        break;
-                    }
-                }
-
-                if (!downloadDetenidoLocal)
-                {
-                    // Guardar evento al finalizar el download             
-                    Evento.GuardarEvento(CodigoEvento.Download, "Download TCS terminado", cajero.Id, sistemasComunicacion.ServicioId);
-                }
-
-                return downloadDetenidoLocal;
-            }
+        public async Task<bool> IniciarDownload(Cajero cajero, Sistemas_Comunicacion sistemasComunicacion, NetworkStream stream)
+        {
+            Console.WriteLine("Iniciando Download...");
 
             // Seleccionar el método adecuado basado en el formato_cajero_id
             if (FormatoCajeroId == 1)
             {
-                downloadDetenido = await EnvioDownloadNDC();
+                return await IniciarDownloadNDC(cajero, sistemasComunicacion, stream);
             }
             else if (FormatoCajeroId == 2)
             {
-                downloadDetenido = await EnvioDownloadTCS();
+                return await IniciarDownloadTCS(cajero, sistemasComunicacion, stream);
             }
             else
             {
                 Console.WriteLine($"Formato de cajero no soportado: {FormatoCajeroId}");
                 Evento.GuardarEvento(CodigoEvento.Download, $"Formato de cajero no soportado: {FormatoCajeroId}", cajero.Id, sistemasComunicacion.ServicioId);
-                downloadDetenido = true;
+                _downloadDetenido = true;
+                return false;
             }
-
-            return downloadDetenido;
         }
 
+        private async Task<bool> IniciarDownloadNDC(Cajero cajero, Sistemas_Comunicacion sistemasComunicacion, NetworkStream stream)
+        {
+            Console.WriteLine("Iniciando Download NDC...");
 
+            // Guardar evento cuando inicia la descarga
+            Evento.GuardarEvento(CodigoEvento.Download, "Iniciando descarga del download NDC", cajero.Id, sistemasComunicacion.ServicioId);
+
+            // Enviar la primera línea
+            if (await EnviarSiguienteLinea(cajero, sistemasComunicacion, stream))
+            {
+                return true; // Se inició correctamente
+            }
+
+            return false; // No hay líneas para enviar
+        }
+
+        private async Task<bool> IniciarDownloadTCS(Cajero cajero, Sistemas_Comunicacion sistemasComunicacion, NetworkStream stream)
+        {
+            Console.WriteLine("Iniciando Download TCS...");
+
+            // Guardar evento cuando inicia la descarga
+            Evento.GuardarEvento(CodigoEvento.Download, "Iniciando descarga del download TCS", cajero.Id, sistemasComunicacion.ServicioId);
+
+            // Enviar la primera línea
+            if (await EnviarSiguienteLinea(cajero, sistemasComunicacion, stream))
+            {
+                return true; // Se inició correctamente
+            }
+
+            return false; // No hay líneas para enviar
+        }
+
+        public async Task<bool> ProcesarRespuesta(string mensajeRecibido, Cajero cajero, Sistemas_Comunicacion sistemasComunicacion)
+        {
+            // Separar el mensaje recibido en un arreglo usando el separador de campo (ASCII 28)
+            string[] elementos = mensajeRecibido.Split((char)28);
+
+            // Verificar si alguno de los elementos contiene un comando ilegal
+            foreach (var elemento in elementos)
+            {
+                if (DiccionarioData.IllegalCommands.ContainsKey(elemento))
+                {
+                    string observacion = DiccionarioData.IllegalCommands[elemento];
+                    Evento.GuardarEvento(CodigoEvento.Download, observacion, cajero.Id, sistemasComunicacion.ServicioId);
+                    Console.WriteLine($"Deteniendo envío del download: {observacion}");
+                    _downloadDetenido = true;
+                    return true; // Indica que el download debe detenerse
+                }
+            }
+
+            return false; // Continuar con el download
+        }
     }
 }
-

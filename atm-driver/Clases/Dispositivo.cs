@@ -23,13 +23,23 @@ namespace atm_driver.Clases
             EstadoSuministro = estadoSuministro;
         }
 
+        public static async Task ProcesarInformacion(AppDbContext context, int dispositivoId, string[] elementos) { 
+        
+            
+         
+        }
+
+
+
         public virtual void Inicializar() { }
-        public virtual void ActualizarDispositivo()
+        public static async Task ActualizarDispositivo()
         {
 
         }
         public virtual void ActualizarSuministro() { 
         }
+
+        
         public virtual string VerificarDispositivo() => EstadoDispositivo;
         public virtual string VerificarSuministro() => EstadoSuministro;
         public virtual void EnviarInformacion() { }

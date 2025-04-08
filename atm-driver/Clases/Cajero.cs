@@ -31,8 +31,7 @@ namespace atm_driver.Clases
         public EstadoCajero estadoCajero;
 
         private bool _downloadEnProgreso = false;
-
-
+        private Download _downloadActual;
 
         // Métodos
         public void Inicializar(string type)
@@ -47,14 +46,12 @@ namespace atm_driver.Clases
                 Console.WriteLine("Error: SistemasComunicacion no está inicializado.");
                 return;
             }
-            string mensaje = "1"+(char)28+(char)28+(char)28+"1";
+            string mensaje = "1" + (char)28 + (char)28 + (char)28 + "1";
             await SistemasComunicacion.EnviarMensaje(mensaje, this, Cliente.GetStream());
             estadoCajero = EstadoCajero.InService;
             Console.WriteLine(estadoCajero + "Estado Cajero");
             Console.WriteLine("Onservice Comando Enviado");
         }
-
-
 
         public async Task OutService()
         {
@@ -69,9 +66,9 @@ namespace atm_driver.Clases
             estadoCajero = EstadoCajero.OutService;
             Console.WriteLine(estadoCajero + "Estado Cajero");
             Console.WriteLine("Outservice Comando Enviado");
-
-
         }
+
+        
 
         public async Task GetSupply()
         {
@@ -88,45 +85,64 @@ namespace atm_driver.Clases
             Console.WriteLine("GetSupply Comando Enviado");
         }
 
-        public async Task ReenviarDownload(Cajero cajero)
+        public async Task GetConfigurationInformation()
+        {
+            if (SistemasComunicacion == null)
+            {
+                Console.WriteLine("Error: SistemasComunicacion no está inicializado.");
+                return;
+            }
+            string mensaje = "1" + (char)28 + (char)28 + (char)28 + "7";
+            await SistemasComunicacion.EnviarMensaje(mensaje, this, Cliente.GetStream());
+            estadoCajero = EstadoCajero.GetConfigurationInformation;
+            Console.WriteLine(estadoCajero + "Estado Cajero");
+            Console.WriteLine("GetConfigurationInformation Comando Enviado");
+        }
+
+        public async Task EnviarDownload(Cajero cajero)
         {
             // Iniciar el proceso de descarga
-            var download = new Download();
-            await download.Inicializar(cajero.DownloadId, Context);
+            _downloadActual = new Download();
+            await _downloadActual.Inicializar(cajero.DownloadId, Context);
 
             // Verificar que el stream no sea nulo
             if (StreamComunicacion == null)
             {
-                Console.WriteLine("Error: StreamComunicacion es nulo en ReenviarDownload");
+                Console.WriteLine("Error: StreamComunicacion es nulo en EnviarDownload");
                 return;
             }
 
-            // Enviar las líneas del archivo de configuración al cajero
+            // Iniciar estado de descarga
             _downloadEnProgreso = true;
-            bool downloadDetenido = await download.EnvioDownload(cajero, cajero.SistemasComunicacion, StreamComunicacion);
-            if (!downloadDetenido)
+            estadoCajero = EstadoCajero.Download;
+
+            // Iniciar el proceso de envío de la primera línea
+            bool downloadIniciado = await _downloadActual.IniciarDownload(cajero, cajero.SistemasComunicacion, StreamComunicacion);
+
+            if (!downloadIniciado)
             {
-                // Guardar evento al finalizar el download
-                //Evento.GuardarEvento(CodigoEvento.Download, "Download terminado", cajero.Id, _servicioId);
+                // No hay líneas para enviar
+                Evento.GuardarEvento(CodigoEvento.Download, "Download terminado (no hay líneas)", cajero.Id, SistemasComunicacion.ServicioId);
                 _downloadEnProgreso = false;
+                estadoCajero = EstadoCajero.Normal;
                 await cajero.OnService();
             }
         }
 
-
-
-
         public async Task ProcesarMensaje(string mensajeRecibido, Cajero cajero)
         {
             string[] elementos = mensajeRecibido.Split((char)28);
-            Console.WriteLine(elementos);
+            Console.WriteLine($"Elementos del mensaje: {string.Join(", ", elementos)}");
+
             // Busca el id del cajero en la base de datos
             var cajeroDb = await Context.Cajeros.FindAsync(Id);
+
             // Evalua si es mensaje Solicitado o No Solicitado
             if (elementos[0] == "22")
             {
                 Console.WriteLine("Es Un Mensaje Solicitado");
-                // Se Procede a Evaluar si esta InService
+
+                // Se Procede a Evaluar el estado actual del cajero
                 if (estadoCajero == EstadoCajero.InService)
                 {
                     Console.WriteLine("Esta en el PROCESO DE IN SERVICE ENTONCES SIGNIFICA QUE ES LA RESPUESTA DEL INSERVICE");
@@ -139,12 +155,8 @@ namespace atm_driver.Clases
                     {
                         Console.WriteLine("El Cajero se Puso Fuera de Servicio");
                         await ActualizarEstadoCajero(EstadoCajeroEvento.FueraDeServicio, "El Cajero no Logro Ponerse en Linea");
-                        
-
                     }
                     estadoCajero = EstadoCajero.Normal;
-
-
                 }
                 else if (estadoCajero == EstadoCajero.OutService)
                 {
@@ -159,21 +171,97 @@ namespace atm_driver.Clases
                     if (elementos[2] == "F") // COMANDO DE TERMINAL STATE
                     {
                         // Verificar que sea de Supply Counters
-                        if (elementos[3].StartsWith("2") )
+                        if (elementos[3].StartsWith("2"))
                         {
                             Console.WriteLine("ES UN MENSAJE DE CONTADORES");
                             await Cajetin.ProcesarInformacion(Context, Id, elementos);
                         }
                     }
+                }
+                else if (estadoCajero == EstadoCajero.GetConfigurationInformation)
+                {
+                    if (elementos[2] == "F") // COMANDO DE TERMINAL STATE
+                    {
+                        // Verificar que sea de Send Configuration Information Terminal Command message
+                        if (elementos[3].StartsWith("1"))
+                        {
+                            Console.WriteLine("Send Configuration Information Terminal Command message");
+                            await Dispositivo.ProcesarInformacion(Context, Id, elementos);
+                        }
+                    }
+                }
+                else if (estadoCajero == EstadoCajero.Download && _downloadActual != null)
+                {
+                    Console.WriteLine("Procesando respuesta de Download");
 
+                    // Verificar si hay comandos ilegales en la respuesta
+                    bool detenerDownload = await _downloadActual.ProcesarRespuesta(mensajeRecibido, this, SistemasComunicacion);
+
+                    if (detenerDownload || _downloadActual.DownloadDetenido())
+                    {
+                        Console.WriteLine("Download detenido por comando ilegal");
+                        _downloadEnProgreso = false;
+                        estadoCajero = EstadoCajero.Normal;
+                        await OnService(); // Poner el cajero en servicio tras detener el download
+                        return;
+                    }
+
+                    if (elementos[3] == "9")
+                    {
+                        Console.WriteLine("Respuesta Positiva - Avanzando a la siguiente línea");
+
+                        // Avanzar a la siguiente línea del download
+                        _downloadActual.AvanzarALaSiguienteLinea();
+
+                        // Verificar si hay más líneas para enviar
+                        if (_downloadActual.HayMasLineas())
+                        {
+                            // Enviar la siguiente línea
+                            await _downloadActual.EnviarSiguienteLinea(this, SistemasComunicacion, StreamComunicacion);
+                        }
+                        else
+                        {
+                            // Download completado
+                            Console.WriteLine("Download completado con éxito!");
+
+                            // Guardar evento de acuerdo al formato del cajero
+                            string tipoDownload = _downloadActual.FormatoCajeroId == 1 ? "NDC" : "TCS";
+                            Evento.GuardarEvento(CodigoEvento.Download, $"Download {tipoDownload} terminado exitosamente", Id, SistemasComunicacion.ServicioId);
+
+                            _downloadEnProgreso = false;
+                            estadoCajero = EstadoCajero.Normal;
+                            await OnService(); // Poner el cajero en servicio tras completar el download
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Comando Ilegal o rechazado durante el download");
+
+                        // Registrar el evento
+                        string tipoDownload = _downloadActual.FormatoCajeroId == 1 ? "NDC" : "TCS";
+                        Evento.GuardarEvento(CodigoEvento.Download, $"Comando rechazado durante download {tipoDownload}: {mensajeRecibido}", Id, SistemasComunicacion.ServicioId);
+
+                        // Dependiendo de la política: intentar la siguiente línea o abortar
+                        _downloadActual.AvanzarALaSiguienteLinea();
+
+                        if (_downloadActual.HayMasLineas())
+                        {
+                            await _downloadActual.EnviarSiguienteLinea(this, SistemasComunicacion, StreamComunicacion);
+                        }
+                        else
+                        {
+                            _downloadEnProgreso = false;
+                            estadoCajero = EstadoCajero.Normal;
+                            await OnService();
+                        }
+                    }
                 }
             }
             else if (elementos[0] == "12")
             {
                 Console.WriteLine("Mensaje No Solicitado");
+                // Procesar mensaje no solicitado si es necesario
             }
-
-            //return 0;
         }
 
         // Método para actualizar el estado del cajero en la base de datos
@@ -199,11 +287,7 @@ namespace atm_driver.Clases
                     Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
                 }
             }
-
         }
-
-
-
 
         public async Task<string> VerificarEstado()
         {
@@ -221,77 +305,14 @@ namespace atm_driver.Clases
             }
         }
 
-
-        /*public NetworkStream GetValidStream()
-        {
-            try
-            {
-                // Si el stream es nulo o el cliente no está conectado, intentar obtener uno nuevo
-                if (StreamComunicacion == null || !Cliente.Connected)
-                {
-                    if (Cliente.Connected)
-                    {
-                        StreamComunicacion = Cliente.GetStream();
-                        Console.WriteLine("Se creó un nuevo stream para el cajero.");
-                    }
-                    else
-                    {
-                        Console.WriteLine("Error: El cliente no está conectado, no se puede obtener el stream.");
-                        return null;
-                    }
-                }
-
-                return StreamComunicacion;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error al obtener stream válido: {ex.Message}");
-                return null;
-            }
-        } */
-
-
-        public void ReportarTransaction()
-        {
-            // Implementación del método
-        }
-
-        public void DeterminarBilletesAdispensar()
-        {
-            // Implementación del método
-        }
-
-        public void EnviarMensajeSolicitado()
-        {
-            // Implementación del método
-        }
-
-        public void EnviarMensajeNoSolicitado()
-        {
-            // Implementación del método
-        }
-
-        
-
-        public void ProcessarMensajeSolicitado()
-        {
-            // Implementación del método
-        }
-
-        public void ProcessarMensajeNoSolicitado()
-        {
-            // Implementación del método
-        }
-
-        public void ProcessarMensaje()
-        {
-            // Implementación del método
-        }
-
-        public void ConstruirRecibo()
-        {
-            // Implementación del método
-        }
+        // Resto de los métodos sin cambios
+        public void ReportarTransaction() { /* Implementación del método */ }
+        public void DeterminarBilletesAdispensar() { /* Implementación del método */ }
+        public void EnviarMensajeSolicitado() { /* Implementación del método */ }
+        public void EnviarMensajeNoSolicitado() { /* Implementación del método */ }
+        public void ProcessarMensajeSolicitado() { /* Implementación del método */ }
+        public void ProcessarMensajeNoSolicitado() { /* Implementación del método */ }
+        public void ProcessarMensaje() { /* Implementación del método */ }
+        public void ConstruirRecibo() { /* Implementación del método */ }
     }
 }
-

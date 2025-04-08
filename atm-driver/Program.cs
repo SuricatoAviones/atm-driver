@@ -53,12 +53,9 @@ namespace AtmDriver
                         {
                             case "1":
                                 // Iniciar el servidor de comunicación
-                                var servicio = Servicio.ObtenerServicioDesdeBaseDeDatos(3, context); // Reemplaza 3 con el ID del servicio que deseas obtener
+                                var servicio = Servicio.ObtenerServicioDesdeBaseDeDatos(1, context); // Reemplaza  con el ID del servicio que deseas obtener
                                 var sistemasComunicacion = new Sistemas_Comunicacion(servicio.ServerIp, servicio.Port, 5001, servicio.ServicioId, context, servicio.TiempoEsperaUno);
                                 await sistemasComunicacion.Inicializar();
-                                break;
-                            case "2":
-                                // Lógica para la opción "Encriptador"
                                 break;
                             default:
                                 Console.WriteLine("Opción no válida. Intente de nuevo.");
