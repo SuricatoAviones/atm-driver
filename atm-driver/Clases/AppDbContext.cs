@@ -1,4 +1,5 @@
 ﻿using atm_driver.Models;
+using atm_driver.Models.Models_Auxiliares;
 using Microsoft.EntityFrameworkCore;
 
 namespace atm_driver.Clases
@@ -25,6 +26,9 @@ namespace atm_driver.Clases
         public DbSet<Codigos_Evento_Model> Codigos_Eventos { get; set; }
         public DbSet<Cajetin_Model> Cajetines { get; set; }
         public DbSet<Cajeros_Dispositivos_Model> Cajeros_Dispositivos { get; set; }
+        public DbSet<Transaccion_Codigo_Model> Transaccion_Codigo { get; set; }
+        public DbSet<Transaccion_Evento_Model> Transaccion_Evento { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -72,7 +76,11 @@ namespace atm_driver.Clases
                 .WithMany()
                 .HasForeignKey(c => c.tipo_evento_id);
 
-
+            modelBuilder.Entity<Cajeros_Model>()
+                .HasOne(c => c.Servicio) // Un cajero tiene un servicio
+                .WithMany() // Un servicio tiene muchos cajeros
+                .HasForeignKey(c => c.servicio_id); // Clave foránea en Cajeros_Model
+                //.OnDelete(DeleteBehavior.Restrict); // Configuración de eliminación restrictiva
         }
 
         public AppDbContext() { } // Constructor vacío
@@ -86,7 +94,7 @@ namespace atm_driver.Clases
         {
             if (!optionsBuilder.IsConfigured)
             {
-                string connectionString = "Server=LUISGUTIERREZ-P\\SQLEXPRESS2;Database=atm-driver;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True";
+                string connectionString = "Server=LAPTOP-BQF70VD3\\SQLEXPRESS;Database=atm-driver;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True";
                 optionsBuilder.UseSqlServer(connectionString);
             }
         }
@@ -98,7 +106,7 @@ namespace atm_driver.Clases
         {
             var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
             /*string connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING");*/
-            string connectionString = "Server=LUISGUTIERREZ-P\\SQLEXPRESS2;Database=atm-driver;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True";
+            string connectionString = "Server=LAPTOP-BQF70VD3\\SQLEXPRESS;Database=atm-driver;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True";
             /*Console.Write(connectionString);*/
             if (!string.IsNullOrEmpty(connectionString))
             {

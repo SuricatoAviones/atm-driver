@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using atm_driver.Clases;
 
@@ -11,9 +12,11 @@ using atm_driver.Clases;
 namespace atm_driver.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250413162108_Tablas-")]
+    partial class Tablas
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -125,17 +128,11 @@ namespace atm_driver.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int?>("servicio_id")
-                        .HasColumnType("int")
-                        .HasColumnName("servicio_id");
-
                     b.HasKey("cajero_id");
 
                     b.HasIndex("download_id");
 
                     b.HasIndex("key_id");
-
-                    b.HasIndex("servicio_id");
 
                     b.ToTable("Cajeros");
                 });
@@ -164,9 +161,9 @@ namespace atm_driver.Migrations
                     b.Property<int>("cantidad_ultima_transaccion")
                         .HasColumnType("int");
 
-                    b.Property<int?>("denominacion")
+                    b.Property<string>("denominacion")
                         .HasMaxLength(100)
-                        .HasColumnType("int");
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int?>("denominacion_moneda_id")
                         .HasColumnType("int")
@@ -233,11 +230,6 @@ namespace atm_driver.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("denominacion_moneda_id"));
 
-                    b.Property<string>("codigo")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)")
-                        .HasColumnName("codigo");
-
                     b.Property<string>("descripcion")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)")
@@ -247,11 +239,6 @@ namespace atm_driver.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)")
                         .HasColumnName("nombre");
-
-                    b.Property<string>("siglas")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)")
-                        .HasColumnName("siglas");
 
                     b.HasKey("denominacion_moneda_id");
 
@@ -443,12 +430,6 @@ namespace atm_driver.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("transaccion_codigo_id"));
-
-                    b.Property<string>("codigo_operacion")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)")
-                        .HasColumnName("codigo_operacion");
 
                     b.Property<string>("descripcion")
                         .IsRequired()
@@ -698,22 +679,21 @@ namespace atm_driver.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("codigo");
 
-                    b.Property<string>("codigo_respuesta")
-                        .HasMaxLength(4)
-                        .HasColumnType("nvarchar(4)")
+                    b.Property<int?>("codigo_respuesta")
+                        .HasColumnType("int")
                         .HasColumnName("codigo_respuesta");
 
                     b.Property<int?>("denominacion_moneda_id")
                         .HasColumnType("int")
                         .HasColumnName("denominacion_moneda_id");
 
+                    b.Property<DateTime?>("fecha_mensaje")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fecha_mensaje");
+
                     b.Property<DateTime?>("fecha_mensaje_recibido")
                         .HasColumnType("datetime2")
                         .HasColumnName("fecha_mensaje_recibido");
-
-                    b.Property<DateTime?>("fecha_mensaje_respuesta")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("fecha_mensaje_respuesta");
 
                     b.Property<DateTime?>("fecha_negocio")
                         .HasColumnType("datetime2")
@@ -813,15 +793,9 @@ namespace atm_driver.Migrations
                         .WithMany()
                         .HasForeignKey("key_id");
 
-                    b.HasOne("atm_driver.Models.Servicio_Model", "Servicio")
-                        .WithMany()
-                        .HasForeignKey("servicio_id");
-
                     b.Navigation("Download");
 
                     b.Navigation("Key");
-
-                    b.Navigation("Servicio");
                 });
 
             modelBuilder.Entity("atm_driver.Models.Cajetin_Model", b =>

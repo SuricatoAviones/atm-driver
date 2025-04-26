@@ -30,10 +30,14 @@ namespace atm_driver.Models
         [Column("key_id")]
         public int? key_id { get; set; }
 
+        [ForeignKey("Servicios")]
+        [Column("servicio_id")]
+        public int? servicio_id { get; set; }
+
         // Propiedad de navegación
         public virtual Keys_Model? Key { get; set; }
         public virtual Download_Model? Download { get; set; }
-
+        public virtual Servicio_Model? Servicio { get; set; }
 
     }
 

@@ -6,12 +6,14 @@ using System.Threading.Tasks;
 
 namespace atm_driver.Clases
 {
-    internal class Servicio
+    public class Servicio
     {
-        public string ServerIp { get; private set; }
-        public int Port { get; private set; }
-        public int TiempoEsperaUno { get; private set; }
-        public int ServicioId { get; private set; }
+        public string ServerIp { get;  set; }
+        public int Port { get;  set; }
+        public int TiempoEsperaUno { get;  set; }
+        public int ServicioId { get;  set; }
+        public string Codigo { get;  set; }
+
         private readonly AppDbContext _context;
 
         // Constructor para inicializar desde base de datos
@@ -21,6 +23,7 @@ namespace atm_driver.Clases
             Port = int.TryParse(servicioModel.Sistemas_Comunicacion?.puerto_tcp, out var port) ? port : throw new ArgumentNullException(nameof(servicioModel.Sistemas_Comunicacion.puerto_tcp));
             TiempoEsperaUno = servicioModel.tiempo_espera_uno ?? 10000; // Valor por defecto si es null
             ServicioId = servicioModel.servicio_id;
+            Codigo = servicioModel.codigo;
             _context = context;
         }
 

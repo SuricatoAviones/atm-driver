@@ -11,14 +11,13 @@ namespace atm_driver.Models
         public int cajetin_id { get; set; }
 
         [MaxLength(100)]
-        public string? denominacion { get; set; }
+        public int? denominacion { get; set; }
 
         [MaxLength(100)]
         public string? tipo_denominacion { get; set; }
 
         [MaxLength(100)]
         public string? tipo { get; set; }
-
         public int cantidad_disponible { get; set; }
         public int cantidad_dispensada { get; set; }
         public int cantidad_rechazada { get; set; }

@@ -23,5 +23,13 @@ namespace atm_driver.Models
         [Column("descripcion")]
         [StringLength(500)] 
         public string? descripcion { get; set; }
+
+        [Column("siglas")]
+        [StringLength(500)]
+        public string? siglas { get; set; }
+
+        [Column("codigo")]
+        [StringLength(500)]
+        public string? codigo { get; set; }
     }
 }

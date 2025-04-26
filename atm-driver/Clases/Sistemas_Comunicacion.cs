@@ -104,7 +104,7 @@ public class Sistemas_Comunicacion
                     return;
                 }
 
-                
+
 
                 cajero = new Cajero
                 {
@@ -121,6 +121,7 @@ public class Sistemas_Comunicacion
                     Cliente = client,
                     StreamComunicacion = stream, // Asignar el stream aquí
                     SistemasComunicacion = this,
+                    Servicio = cajeroModel.Servicio != null ? new Servicio(cajeroModel.Servicio, _context) : null,
                     Context = _context
                 };
 
@@ -147,9 +148,9 @@ public class Sistemas_Comunicacion
                 }
 
                 // Iniciar el proceso de descarga
-                await cajero.EnviarDownload(cajero);
+                //await cajero.EnviarDownload(cajero);
 
-                //TODO: podria usar un do while para enviar primero el download y con un if que si cajero no esta conectado da error pero si lo esta envia el download
+       
                 //Recibiendo mensajes del cajero
                 while (client.Connected)
                 {

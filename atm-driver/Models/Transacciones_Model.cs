@@ -29,8 +29,8 @@ namespace atm_driver.Models
         [Column("fecha_mensaje_recibido")]
         public DateTime? fecha_mensaje_recibido { get; set; }
 
-        [Column("fecha_mensaje")]
-        public DateTime? fecha_mensaje { get; set; }
+        [Column("fecha_mensaje_respuesta")]
+        public DateTime? fecha_mensaje_respuesta { get; set; }
 
         [Column("monto")]
         public int? monto { get; set; }
@@ -40,7 +40,8 @@ namespace atm_driver.Models
         public string? trace { get; set; }
 
         [Column("codigo_respuesta")]
-        public int? codigo_respuesta { get; set; }
+        [StringLength(4)]
+        public string? codigo_respuesta { get; set; }
 
         [Column("tipo_cuenta")]
         [StringLength(50)]
@@ -61,9 +62,6 @@ namespace atm_driver.Models
         [StringLength(50)]
         public string? tarjeta { get; set; }
 
-        [Column("pin")]
-        [StringLength(50)]
-        public string? pin { get; set; }
 
         // Claves Foráneas
         [ForeignKey("Denominaciones_Monedas")]

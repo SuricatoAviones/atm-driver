@@ -107,11 +107,41 @@ namespace atm_driver.Clases
             }
         }
 
+        public static async Task<Dictionary<int, int>> VerificarEfectivo(AppDbContext context, int cajeroId, bool[] cajetinesDisponiblesEstado)
+        {
+            // Crear un diccionario para almacenar la cantidad de billetes por cajetín
+            var billetesPorCajetin = new Dictionary<int, int>();
+
+            // Obtener los cajetines asociados al cajero desde la base de datos
+            var cajetines = await context.Cajetines
+                .Where(c => c.cajetin_id == cajeroId)
+                .ToListAsync();
+
+            // Iterar sobre los cajetines y verificar su estado
+            for (int i = 0; i < cajetines.Count; i++)
+            {
+                if (i < cajetinesDisponiblesEstado.Length && cajetinesDisponiblesEstado[i])
+                {
+                    // Agregar la cantidad disponible al diccionario
+                    billetesPorCajetin[cajetines[i].numero_cajetin] = cajetines[i].cantidad_disponible;
+                }
+                else
+                {
+                    // Si el cajetín no está disponible, agregarlo con cantidad 0
+                    billetesPorCajetin[cajetines[i].numero_cajetin] = 0;
+                }
+            }
+
+            return billetesPorCajetin;
+        }
+
+
+
 
 
         public void RecibirInformacion() { }
         public void ProcesarInformacion() { }
-        public double VerificarEfectivo() => CantidadDisponible;
+        
         public double ActualizarEfectivo() => CantidadDisponible - CantidadDispensada;
     }
 }

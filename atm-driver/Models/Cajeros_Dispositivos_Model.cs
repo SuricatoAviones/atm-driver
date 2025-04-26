@@ -17,9 +17,6 @@ namespace atm_driver.Models
         public int cajero_dispositivo_id { get; set; }
         
 
-        [MaxLength(100)]
-        public string? nombre { get; set; }
-
         [Column("estado_dispositivo")]
         public int? estado_dispositivo { get; set; }
 
